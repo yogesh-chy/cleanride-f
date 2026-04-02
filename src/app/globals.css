@@ -1,26 +1,166 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@plugin "tailwindcss-animate";
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@custom-variant dark (&:is(.dark *));
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@theme {
+  --font-heading: "Bebas Neue", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px hsl(195 100% 50% / 0.2);
+    }
+    50% {
+      box-shadow: 0 0 40px hsl(195 100% 50% / 0.4);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ================= BASE VARIABLES ================= */
+:root {
+  --background: 210 20% 6%;
+  --foreground: 210 10% 95%;
+
+  --card: 210 18% 10%;
+  --card-foreground: 210 10% 95%;
+
+  --popover: 210 18% 10%;
+  --popover-foreground: 210 10% 95%;
+
+  --primary: 195 100% 50%;
+  --primary-foreground: 210 20% 4%;
+
+  --secondary: 210 15% 15%;
+  --secondary-foreground: 210 10% 90%;
+
+  --muted: 210 12% 14%;
+  --muted-foreground: 210 10% 55%;
+
+  --accent: 195 90% 60%;
+  --accent-foreground: 210 20% 4%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 210 12% 18%;
+  --input: 210 12% 18%;
+  --ring: 195 100% 50%;
+
+  --radius: 0.5rem;
+
+  --sidebar-background: 210 18% 8%;
+  --sidebar-foreground: 210 10% 90%;
+  --sidebar-primary: 195 100% 50%;
+  --sidebar-primary-foreground: 210 20% 4%;
+  --sidebar-accent: 210 15% 16%;
+  --sidebar-accent-foreground: 210 10% 90%;
+  --sidebar-border: 210 12% 18%;
+  --sidebar-ring: 195 100% 50%;
+
+  /* Custom tokens */
+  --gradient-hero: linear-gradient(135deg, hsl(210 18% 6%) 0%, hsl(200 22% 10%) 50%, hsl(210 18% 6%) 100%);
+  --gradient-primary: linear-gradient(135deg, hsl(195 100% 50%), hsl(195 90% 60%));
+  --shadow-glow: 0 0 40px hsl(195 100% 50% / 0.2);
+  --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
+
+  --font-heading: "Bebas Neue", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    letter-spacing: 0.02em;
+  }
+}
+
+/* ================= CUSTOM UTILITIES ================= */
+@utility text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@utility bg-hero-gradient {
+  background: var(--gradient-hero);
+}
+
+@utility shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+
+@utility section-padding {
+  @apply px-4 py-20 md:px-8 lg:px-16 lg:py-28;
 }
