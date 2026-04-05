@@ -64,13 +64,17 @@ const ServicesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-              className="group p-6 rounded-lg bg-card border border-border hover:border-primary/50 transition-all duration-300 shadow-card hover:shadow-glow"
+              whileHover={{ y: -5, scale: 1.02 }}
+              className="group p-8 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all duration-300 shadow-card hover:shadow-glow cursor-default"
             >
-              <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                <item.icon className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="font-heading text-2xl font-semibold mb-2 text-foreground">{item.title}</h3>
-              <p className="font-body text-sm text-muted-foreground">{item.desc}</p>
+              <motion.div 
+                whileHover={{ rotate: 10, scale: 1.1 }}
+                className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300"
+              >
+                <item.icon className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors" />
+              </motion.div>
+              <h3 className="font-heading text-2xl font-semibold mb-3 text-foreground uppercase tracking-tight">{item.title}</h3>
+              <p className="font-body text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
         </div>

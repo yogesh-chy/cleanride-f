@@ -13,7 +13,6 @@ const bebasNeue = Bebas_Neue({
   subsets: ["latin"], 
   variable: "--font-heading" 
 });
-
 export const metadata: Metadata = {
   title: "CleanRide Nepal - The Future of Clean",
   description: "Nepal's premier car wash service with real-time tracking.",

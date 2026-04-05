@@ -1,13 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import heroImage from "@/assets/hero-carwash.jpg";
 
 const HeroSection = () => {
   return (
-    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background image with overlay */}
       <div className="absolute inset-0">
         <img
@@ -39,10 +38,11 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm mb-8"
+          whileHover={{ scale: 1.02 }}
+          className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm mb-12 max-w-full cursor-default"
         >
-          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="font-body text-xs tracking-[0.2em] text-primary uppercase">
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
+          <span className="font-body text-[10px] md:text-xs tracking-[0.15em] text-primary uppercase text-center">
             Serving Kathmandu • Lalitpur • Bhaktapur
           </span>
         </motion.div>
@@ -51,7 +51,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="font-heading text-6xl md:text-8xl lg:text-9xl font-bold leading-[0.9] mb-6"
+          className="font-heading text-6xl md:text-8xl lg:text-9xl font-bold leading-[0.9] mb-4"
         >
           THE FUTURE
           <br />
@@ -62,7 +62,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="font-body text-muted-foreground text-lg md:text-xl mb-10 max-w-2xl mx-auto"
+          className="font-body text-muted-foreground text-sm md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed"
         >
           Nepal's premier car wash service. Real-time vehicle tracking, premium care for cars, SUVs & bikes. Book your wash in seconds.
         </motion.p>
@@ -75,28 +75,25 @@ const HeroSection = () => {
         >
           <Link
             href="/register"
-            className="inline-flex items-center justify-center px-10 py-4 rounded-md font-heading text-xl tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity animate-pulse-glow"
           >
-            BOOK YOUR WASH
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center justify-center px-10 py-4 rounded-md font-heading text-xl tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-all animate-pulse-glow"
+            >
+              BOOK YOUR WASH
+            </motion.button>
           </Link>
-          <a
+          <motion.a
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(var(--secondary), 0.8)' }}
+            whileTap={{ scale: 0.95 }}
             href="#pricing"
-            className="inline-flex items-center justify-center px-10 py-4 rounded-md font-heading text-xl tracking-wider border border-border text-foreground hover:bg-secondary transition-colors backdrop-blur-sm"
+            className="inline-flex items-center justify-center px-10 py-4 rounded-md font-heading text-xl tracking-wider border border-border text-foreground transition-colors backdrop-blur-sm"
           >
             VIEW PACKAGES
-          </a>
+          </motion.a>
         </motion.div>
       </div>
-
-      <motion.a
-        href="#about"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 2 }}
-        className="absolute bottom-8 flex flex-col items-center text-muted-foreground"
-      >
-        <span className="font-body text-xs tracking-[0.3em] uppercase mb-2">Scroll</span>
-        <ChevronDown size={24} />
-      </motion.a>
     </section>
   );
 };

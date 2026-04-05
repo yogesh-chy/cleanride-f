@@ -132,21 +132,12 @@ export default function CustomerDashboard() {
                 </div>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-body text-sm text-muted-foreground mb-1 block">Vehicle Number</label>
-                  <input type="text" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required
-                    placeholder="BA 1 KHA 2345"
-                    className="w-full px-4 py-3 rounded-md bg-secondary border border-border text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="font-body text-sm text-muted-foreground mb-1 block">Vehicle Color</label>
-                  <input type="text" value={vehicleColor} onChange={(e) => setVehicleColor(e.target.value)} required
-                    placeholder="White"
-                    className="w-full px-4 py-3 rounded-md bg-secondary border border-border text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
-                  />
-                </div>
+              <div>
+                <label className="font-body text-sm text-muted-foreground mb-1 block">Vehicle Number</label>
+                <input type="text" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required
+                  placeholder="BA 1 KHA 2345"
+                  className="w-full px-4 py-3 rounded-md bg-secondary border border-border text-foreground font-body text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-muted-foreground"
+                />
               </div>
 
               {/* Package */}

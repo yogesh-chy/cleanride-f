@@ -47,29 +47,32 @@ const GallerySection = () => {
               key={i}
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.08 }}
-               className="group relative rounded-xl overflow-hidden cursor-pointer aspect-[4/3]"
+               className="group relative rounded-2xl overflow-hidden cursor-pointer aspect-[4/3] shadow-card hover:shadow-glow"
               onClick={() => setSelectedImage(item.src)}
             >
               <img
                 src={item.src.src}
                 alt={item.alt}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 loading="lazy"
                 width={800}
                 height={600}
               />
               {/* Hover overlay */}
-              <div className="absolute inset-0 bg-background/0 group-hover:bg-background/60 transition-all duration-300 flex items-center justify-center">
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
-                  <span className="font-heading text-lg font-bold text-foreground">{item.category}</span>
-                  <p className="font-body text-xs text-muted-foreground mt-1">Click to enlarge</p>
+              <div className="absolute inset-0 bg-background/0 group-hover:bg-background/70 transition-all duration-300 flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-y-4 group-hover:translate-y-0 text-center px-4">
+                  <span className="font-heading text-xl font-bold text-foreground block mb-2">{item.category}</span>
+                  <div className="w-10 h-1 bg-primary mx-auto mb-3" />
+                  <p className="font-body text-xs text-muted-foreground uppercase tracking-widest font-bold">Details Reveal</p>
                 </div>
               </div>
               {/* Category badge */}
-              <div className="absolute top-3 left-3">
-                <span className="px-3 py-1 rounded-full text-[10px] font-body tracking-wider bg-primary/80 text-primary-foreground uppercase">
+              <div className="absolute top-4 left-4 z-20">
+                <span className="px-4 py-1.5 rounded-full text-[10px] font-heading font-bold tracking-widest bg-primary/90 text-primary-foreground uppercase shadow-lg">
                   {item.category}
                 </span>
               </div>
@@ -82,48 +85,64 @@ const GallerySection = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-12"
+          className="mt-20"
         >
-          <h3 className="font-heading text-2xl font-bold text-center mb-6">
+          <h3 className="font-heading text-3xl font-bold text-center mb-10 tracking-tight uppercase italic">
             WATCH US <span className="text-gradient">IN ACTION</span>
           </h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="relative rounded-xl overflow-hidden aspect-video bg-secondary border border-border flex items-center justify-center group cursor-pointer">
+          <div className="grid md:grid-cols-2 gap-8">
+            <motion.div 
+              whileHover={{ y: -8 }}
+              className="relative rounded-2xl overflow-hidden aspect-video bg-secondary border border-white/5 flex items-center justify-center group cursor-pointer shadow-2xl"
+            >
               <img
                 src={gallery2.src}
                 alt="Car wash process video thumbnail"
-                className="w-full h-full object-cover opacity-60"
+                className="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
                 loading="lazy"
                 width={800}
                 height={600}
               />
+              <div className="absolute inset-0 bg-background/20 group-hover:bg-background/40 transition-colors" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play className="w-7 h-7 text-primary-foreground ml-1" />
-                </div>
+                <motion.div 
+                  whileHover={{ scale: 1.15, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center shadow-glow"
+                >
+                  <Play className="w-8 h-8 text-primary-foreground ml-1" />
+                </motion.div>
               </div>
-              <div className="absolute bottom-4 left-4">
-                <span className="font-heading text-sm text-foreground">Full Exterior Wash Process</span>
+              <div className="absolute bottom-6 left-6 z-10">
+                <span className="font-heading text-lg text-foreground uppercase tracking-wider bg-background/80 px-4 py-1 rounded-lg backdrop-blur-sm border border-white/5">Full Exterior Wash Process</span>
               </div>
-            </div>
-            <div className="relative rounded-xl overflow-hidden aspect-video bg-secondary border border-border flex items-center justify-center group cursor-pointer">
+            </motion.div>
+            <motion.div 
+              whileHover={{ y: -8 }}
+              className="relative rounded-2xl overflow-hidden aspect-video bg-secondary border border-white/5 flex items-center justify-center group cursor-pointer shadow-2xl"
+            >
               <img
                 src={gallery4.src}
                 alt="Interior detailing video thumbnail"
-                className="w-full h-full object-cover opacity-60"
+                className="w-full h-full object-cover opacity-60 transition-transform duration-700 group-hover:scale-105"
                 loading="lazy"
                 width={800}
                 height={600}
               />
+              <div className="absolute inset-0 bg-background/20 group-hover:bg-background/40 transition-colors" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full bg-primary/90 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Play className="w-7 h-7 text-primary-foreground ml-1" />
-                </div>
+                <motion.div 
+                   whileHover={{ scale: 1.15, rotate: 90 }}
+                   whileTap={{ scale: 0.9 }}
+                   className="w-20 h-20 rounded-full bg-primary/90 flex items-center justify-center shadow-glow"
+                >
+                  <Play className="w-8 h-8 text-primary-foreground ml-1" />
+                </motion.div>
               </div>
-              <div className="absolute bottom-4 left-4">
-                <span className="font-heading text-sm text-foreground">Interior Deep Clean Process</span>
+              <div className="absolute bottom-6 left-6 z-10">
+                <span className="font-heading text-lg text-foreground uppercase tracking-wider bg-background/80 px-4 py-1 rounded-lg backdrop-blur-sm border border-white/5">Interior Deep Clean Process</span>
               </div>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </div>

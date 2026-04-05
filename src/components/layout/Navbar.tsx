@@ -4,20 +4,22 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
 const navLinks = [
-  { label: "Home", href: "#home" },
-  { label: "Services", href: "#services" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Contact", href: "#contact" },
-  { label: "About-Us", href: "#about" },
-  { label: "Gallery", href: "#gallery" },
+  { label: "Home", href: "/" },
+  { label: "Services", href: "/services" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "How It Works", href: "/how-it-works" },
+  { label: "Gallery", href: "/gallery" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
 
   const getDashboardPath = () => {
@@ -38,41 +40,64 @@ const Navbar = () => {
       className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border"
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4">
-        <a href="#home" className="font-heading text-3xl tracking-wider">
+        <Link href="/" className="font-heading text-3xl tracking-wider">
           <span className="text-gradient">CLEAN</span>
           <span className="text-foreground">RIDE</span>
-        </a>
+        </Link>
 
         <ul className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <a href={link.href} className="font-body text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
-                {link.label}
-              </a>
+              <Link href={link.href}>
+                <motion.span 
+                  whileHover={{ scale: 1.05 }}
+                  className={`font-body text-sm hover:text-primary transition-colors cursor-pointer ${
+                    pathname === link.href ? "text-primary font-medium" : "text-muted-foreground"
+                  }`}
+                >
+                  {link.label}
+                </motion.span>
+              </Link>
             </li>
           ))}
         </ul>
 
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
-            <Link href={getDashboardPath()} className="px-6 py-2 rounded-md font-body text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-              Dashboard
+            <Link href={getDashboardPath()}>
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="px-6 py-2 rounded-md font-body text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 shadow-glow"
+              >
+                Dashboard
+              </motion.button>
             </Link>
           ) : (
             <>
               <Link href="/login" className="px-5 py-2 rounded-md font-body text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Login
               </Link>
-              <Link href="/register" className="px-6 py-2 rounded-md font-body text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
-                Book Now
+              <Link href="/register">
+                <motion.button 
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="px-6 py-2 rounded-md font-body text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 shadow-glow"
+                >
+                  Book Now
+                </motion.button>
               </Link>
             </>
           )}
         </div>
 
-        <button onClick={() => setOpen(!open)} className="md:hidden text-foreground">
+        <motion.button 
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setOpen(!open)} 
+          className="md:hidden text-foreground p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           {open ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        </motion.button>
       </div>
 
       {open && (
@@ -84,9 +109,15 @@ const Navbar = () => {
           <ul className="flex flex-col items-center gap-4 py-6">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <a href={link.href} onClick={() => setOpen(false)} className="font-body text-muted-foreground hover:text-primary transition-colors">
+                <Link 
+                  href={link.href} 
+                  onClick={() => setOpen(false)} 
+                  className={`font-body hover:text-primary transition-colors ${
+                    pathname === link.href ? "text-primary font-medium" : "text-muted-foreground"
+                  }`}
+                >
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
             <li>
