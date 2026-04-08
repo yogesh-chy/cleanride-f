@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/lib/auth-context";
 import {
   User, UserPlus, Phone, Mail, Award, 
   CheckCircle2, Clock, MoreVertical, Trash2,
@@ -21,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 interface StaffMember {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
   phone: string;
@@ -40,31 +41,139 @@ const initialStaff: StaffMember[] = [
 ];
 
 export default function StaffPage() {
-  const [staff, setStaff] = useState<StaffMember[]>(initialStaff);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<{id: string | number, name: string} | null>(null);
   
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
   // Form state
   const [newStaff, setNewStaff] = useState({
     name: "",
     email: "",
     phone: "",
+    password: "",
     role: "Wash Technician",
   });
 
-  const handleAddStaff = (e: React.FormEvent) => {
+  // Fetch staff on load
+  useEffect(() => {
+    fetchStaff();
+  }, []);
+
+  const fetchStaff = async () => {
+    setIsLoading(true);
+    try {
+      // Get token from cookie for auth
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      
+      const response = await fetch(`${API_BASE_URL}/users/?role=staff`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        // Handle paginated or non-paginated response
+        const results = Array.isArray(responseData) ? responseData : responseData.results || [];
+        
+        const mappedData = results.map((item: any) => ({
+          id: item.id,
+          name: item.name,
+          email: item.email,
+          phone: item.phone,
+          role: item.role === 'staff' ? 'Wash Technician' : item.role,
+          status: "available",
+          rating: 4.5,
+          tasksCompleted: 0,
+          joinDate: new Date(item.date_joined).toISOString().split('T')[0]
+        }));
+        setStaff(mappedData);
+      } else {
+        toast.error("Failed to load staff list");
+      }
+    } catch (err) {
+      toast.error("Connection error while fetching staff");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    const staffToAdd: StaffMember = {
-      id: `s${Date.now()}`,
-      ...newStaff,
-      status: "available",
-      rating: 0,
-      tasksCompleted: 0,
-      joinDate: new Date().toISOString().split("T")[0],
-    };
-    setStaff([...staff, staffToAdd]);
-    setIsAddModalOpen(false);
-    setNewStaff({ name: "", email: "", phone: "", role: "Wash Technician" });
-    toast.success(`Successfully added staff member: ${newStaff.name}`);
+    setIsSubmitting(true);
+    
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      
+      const response = await fetch(`${API_BASE_URL}/staff/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(newStaff),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success(`Successfully added staff member: ${newStaff.name}`);
+        setIsAddModalOpen(false);
+        setNewStaff({ name: "", email: "", phone: "", password: "", role: "Wash Technician" });
+        fetchStaff(); // Refresh the list
+      } else {
+        toast.error(data.message || "Failed to add staff member");
+      }
+    } catch (err) {
+      toast.error("Connection error while adding staff");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedStaff) return;
+    setIsSubmitting(true);
+
+    try {
+      // Get token from cookie directly for most reliable admin access in this context
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      
+      if (!token) {
+        toast.error("Session expired. Please login again.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/users/${selectedStaff.id}/`, {
+        method: "DELETE",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (response.ok) {
+        toast.success(`Removed staff member: ${selectedStaff.name}`);
+        setIsDeleteModalOpen(false);
+        fetchStaff();
+      } else {
+        toast.error("Failed to remove staff member");
+      }
+    } catch (err) {
+      toast.error("Connection error while removing staff");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteStaff = (id: string | number, name: string) => {
+    setSelectedStaff({ id, name });
+    setIsDeleteModalOpen(true);
   };
 
   const statusColors = {
@@ -129,29 +238,73 @@ export default function StaffPage() {
                   required
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="role" className="text-xs uppercase tracking-widest text-muted-foreground">Designation</Label>
-                <select 
-                  id="role"
-                  value={newStaff.role}
-                  onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
-                  className="w-full h-10 px-3 rounded-md bg-secondary border border-border font-body text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                >
-                  <option>Wash Technician</option>
-                  <option>Senior Detailer</option>
-                  <option>Interior Specialist</option>
-                  <option>Quality Inspector</option>
-                </select>
-              </div>
-              <DialogFooter className="pt-4">
-                <button 
-                  type="submit" 
-                  className="w-full py-3 bg-primary text-primary-foreground font-heading tracking-widest rounded-md hover:opacity-90 transition-opacity uppercase"
-                >
-                  Confirm Registration
-                </button>
-              </DialogFooter>
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-xs uppercase tracking-widest text-muted-foreground">Login Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password"
+                    value={newStaff.password}
+                    onChange={(e) => setNewStaff({...newStaff, password: e.target.value})}
+                    placeholder="••••••••" 
+                    className="bg-secondary border-border focus:ring-primary h-10 font-body text-sm" 
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role" className="text-xs uppercase tracking-widest text-muted-foreground">Designation</Label>
+                  <select 
+                    id="role"
+                    value={newStaff.role}
+                    onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
+                    className="w-full h-10 px-3 rounded-md bg-secondary border border-border font-body text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    required
+                  >
+                    <option>Wash Technician</option>
+                    <option>Senior Detailer</option>
+                    <option>Interior Specialist</option>
+                    <option>Quality Inspector</option>
+                  </select>
+                </div>
+                <DialogFooter className="pt-4">
+                  <button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full py-3 bg-primary text-primary-foreground font-heading tracking-widest rounded-md hover:opacity-90 transition-opacity uppercase disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Registering..." : "Confirm Registration"}
+                  </button>
+                </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Modal */}
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent className="sm:max-w-[400px] bg-card border-border">
+            <DialogHeader>
+              <DialogTitle className="font-heading text-xl tracking-wide text-foreground uppercase flex items-center gap-2">
+                <AlertCircle className="text-destructive" size={20} /> Confirm Deletion
+              </DialogTitle>
+              <DialogDescription className="font-body text-sm text-muted-foreground pt-2">
+                This action is irreversible. Are you sure you want to remove <span className="text-foreground font-medium">{selectedStaff?.name}</span> from the staff registry?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="flex gap-3 sm:gap-0 pt-4">
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-secondary transition-colors"
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDelete}
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-heading text-xs tracking-widest uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {isSubmitting ? "Deleting..." : "Delete Permanently"}
+              </button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -180,6 +333,14 @@ export default function StaffPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Loading Overlay */}
+      {isLoading && staff.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="font-body text-muted-foreground">Loading your team...</p>
+        </div>
+      )}
 
       {/* Staff Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -247,16 +408,16 @@ export default function StaffPage() {
                        <span className="font-body text-[10px] text-muted-foreground">Kathmandu, Nepal</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <button onClick={() => toast.info("Opening staff context menu...")} className="text-muted-foreground hover:text-foreground transition-colors"><MoreVertical size={18} /></button>
-                      <button 
-                        onClick={() => {
-                          setStaff(staff.filter(st => st.id !== s.id));
-                          toast.success(`Removed staff member ${s.name}`);
-                        }}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                        <button 
+                          onClick={() => handleDeleteStaff(s.id, s.name)}
+                          className="text-muted-foreground hover:text-destructive hover:scale-110 transition-all p-1.5 rounded-md hover:bg-destructive/10"
+                          title="Remove Staff Member"
+                        >
+                          <Trash2 size={22} />
+                        </button>
+                        <button onClick={() => toast.info("Opening staff context menu...")} className="text-muted-foreground hover:text-foreground transition-colors">
+                          <MoreVertical size={18} />
+                        </button>
                     </div>
                   </div>
                 </div>

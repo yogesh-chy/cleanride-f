@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  TrendingUp, Package, Users, User, DollarSign, LogOut 
+  LayoutDashboard, CalendarRange, Users, Contact, DollarSign, LogOut 
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 
 const menuItems = [
-  { label: "Dashboard", icon: TrendingUp, href: "/admin" },
-  { label: "Bookings", icon: Package, href: "/admin/bookings" },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+  { label: "Bookings", icon: CalendarRange, href: "/admin/bookings" },
   { label: "Customers", icon: Users, href: "/admin/customers" },
-  { label: "Team", icon: User, href: "/admin/team" },
+  { label: "Staffs", icon: Contact, href: "/admin/team" },
   { label: "Finances", icon: DollarSign, href: "/admin/finances" },
 ];
 
@@ -21,9 +21,9 @@ export function AdminSidebar() {
   const { user, logout } = useAuth();
   const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   return (

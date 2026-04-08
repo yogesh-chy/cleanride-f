@@ -130,6 +130,9 @@
     @apply bg-background text-foreground;
     font-family: var(--font-body);
   }
+  button {
+    @apply cursor-pointer;
+  }
   h1,
   h2,
   h3,
@@ -147,7 +150,9 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  padding-right: 0.05em; /* Prevents italic/large right-edge clipping */
+  /* Added padding and negative margins to prevent clipping with tall fonts */
+  padding: 0.15em 0.05em;
+  margin: -0.15em -0.05em;
 }
 
 @utility bg-hero-gradient {

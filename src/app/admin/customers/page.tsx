@@ -5,8 +5,16 @@ import { motion } from "framer-motion";
 import {
   Users, Search, Filter, MoreVertical, 
   Mail, Phone, Calendar, ArrowUpRight,
-  UserCheck, Heart, UserPlus
+  UserCheck, Heart, UserPlus, Trash2, AlertCircle
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 interface Customer {
@@ -20,20 +28,100 @@ interface Customer {
   status: "active" | "inactive" | "vip";
 }
 
-const demoCustomers: Customer[] = [
-  { id: "c1", name: "Hari Bahadur", email: "hari@example.com", phone: "+977 9812345678", totalBookings: 12, totalSpent: 12500, lastVisit: "2024-03-28", status: "vip" },
-  { id: "c2", name: "Sita Sharma", email: "sita@example.com", phone: "+977 9823456789", totalBookings: 5, totalSpent: 4500, lastVisit: "2024-04-01", status: "active" },
-  { id: "c3", name: "Bikash Thapa", email: "bikash@example.com", phone: "+977 9834567890", totalBookings: 8, totalSpent: 7200, lastVisit: "2024-03-15", status: "active" },
-  { id: "c4", name: "Anita KC", email: "anita@example.com", phone: "+977 9845678901", totalBookings: 15, totalSpent: 18000, lastVisit: "2024-04-03", status: "vip" },
-  { id: "c5", name: "Deepak Gurung", email: "deepak@example.com", phone: "+977 9856789012", totalBookings: 2, totalSpent: 1500, lastVisit: "2024-02-20", status: "inactive" },
-  { id: "c6", name: "Sunil Magar", email: "sunil@example.com", phone: "+977 9867890123", totalBookings: 1, totalSpent: 500, lastVisit: "2024-04-04", status: "active" },
-];
+const demoCustomers: Customer[] = []; // Clear demo data
 
 export default function CustomersPage() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<{id: string, name: string} | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "vip">("all");
 
-  const filtered = demoCustomers.filter(c => {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+  const confirmDelete = async () => {
+    if (!selectedCustomer) return;
+    setIsSubmitting(true);
+
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      
+      if (!token) {
+        toast.error("Session expired. Please login again.");
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/users/${selectedCustomer.id}/`, {
+        method: "DELETE",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (response.ok) {
+        toast.success(`Removed customer: ${selectedCustomer.name}`);
+        setIsDeleteModalOpen(false);
+        fetchCustomers();
+      } else {
+        toast.error("Failed to remove customer");
+      }
+    } catch (err) {
+      toast.error("Connection error while removing customer");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCustomer = (id: string, name: string) => {
+    setSelectedCustomer({ id, name });
+    setIsDeleteModalOpen(true);
+  };
+
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const fetchCustomers = async () => {
+    setIsLoading(true);
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      
+      const response = await fetch(`${API_BASE_URL}/users/?role=customer`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        // Handle paginated or non-paginated response
+        const results = Array.isArray(responseData) ? responseData : responseData.results || [];
+        
+        const mappedData = results.map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name,
+          email: item.email,
+          phone: item.phone,
+          totalBookings: 0, 
+          totalSpent: 0, 
+          lastVisit: "New User",
+          status: "active"
+        }));
+        setCustomers(mappedData);
+      } else {
+        toast.error("Failed to load customer directory");
+      }
+    } catch (err) {
+      toast.error("Connection error while fetching customers");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filtered = customers.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          c.phone.includes(searchTerm) || 
                          c.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -57,12 +145,10 @@ export default function CustomersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
-          { label: "Total Customers", value: "1,248", sub: "+12 this month", icon: <Users size={18} className="text-primary" /> },
-          { label: "Active Users", value: "842", sub: "68% of total", icon: <UserCheck size={18} className="text-green-400" /> },
-          { label: "VIP Members", value: "156", sub: "Tier-based loyalty", icon: <Heart size={18} className="text-red-400" /> },
-          { label: "Avg. Customer LV", value: "Rs. 2,450", sub: "Per visitor spend", icon: <ArrowUpRight size={18} className="text-blue-400" /> },
+          { label: "Total Customers", value: customers.length.toString(), sub: "Registered users", icon: <Users size={18} className="text-primary" /> },
+          { label: "Active Users", value: customers.filter(c => c.status === "active").length.toString(), sub: "Recent activity", icon: <UserCheck size={18} className="text-green-400" /> },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
@@ -109,6 +195,14 @@ export default function CustomersPage() {
           ))}
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="font-body text-muted-foreground">Loading customer database...</p>
+        </div>
+      )}
 
       {/* Customer Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -167,13 +261,52 @@ export default function CustomersPage() {
               <button onClick={() => toast.info("Opening transaction history...")} className="font-body text-xs text-primary hover:underline flex items-center gap-1 group/link">
                 View Transaction History <ChevronRight size={14} className="group-hover/link:translate-x-1 transition-transform" />
               </button>
-              <button onClick={() => toast.info("Opening customer options...")} className="text-muted-foreground hover:text-foreground transition-colors">
-                <MoreVertical size={18} />
-              </button>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => handleDeleteCustomer(c.id, c.name)}
+                  className="text-muted-foreground hover:text-destructive hover:scale-110 transition-all p-1.5 rounded-md hover:bg-destructive/10"
+                  title="Remove Customer"
+                >
+                  <Trash2 size={20} />
+                </button>
+                <button onClick={() => toast.info("Opening customer options...")} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <MoreVertical size={18} />
+                </button>
+              </div>
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[400px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl tracking-wide text-foreground uppercase flex items-center gap-2">
+              <AlertCircle className="text-destructive" size={20} /> Confirm Deletion
+            </DialogTitle>
+            <DialogDescription className="font-body text-sm text-muted-foreground pt-2">
+              This action is irreversible. Are you sure you want to remove customer <span className="text-foreground font-medium">{selectedCustomer?.name}</span>?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:gap-0 pt-4">
+            <button 
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="flex-1 px-4 py-2 rounded-md border border-border font-body text-sm hover:bg-secondary transition-colors"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={confirmDelete}
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-heading text-xs tracking-widest uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              {isSubmitting ? "Deleting..." : "Delete Permanently"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

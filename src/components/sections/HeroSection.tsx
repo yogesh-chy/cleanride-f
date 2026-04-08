@@ -39,7 +39,7 @@ const HeroSection = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           whileHover={{ scale: 1.02 }}
-          className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm mb-12 max-w-full cursor-default"
+          className="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-primary/30 bg-primary/5 backdrop-blur-sm mb-2 max-w-full cursor-default"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse shrink-0" />
           <span className="font-body text-[10px] md:text-xs tracking-[0.15em] text-primary uppercase text-center">
@@ -51,7 +51,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="font-heading text-6xl md:text-8xl lg:text-9xl font-bold leading-[0.9] mb-4"
+          className="font-heading text-6xl md:text-8xl lg:text-9xl font-bold leading-[1.1] mb-4"
         >
           THE FUTURE
           <br />
@@ -62,7 +62,7 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="font-body text-muted-foreground text-sm md:text-lg mb-8 max-w-2xl mx-auto leading-relaxed"
+          className="font-body text-muted-foreground text-sm md:text-lg mb-6 max-w-2xl mx-auto leading-relaxed"
         >
           Nepal's premier car wash service. Real-time vehicle tracking, premium care for cars, SUVs & bikes. Book your wash in seconds.
         </motion.p>
@@ -85,10 +85,14 @@ const HeroSection = () => {
             </motion.button>
           </Link>
           <motion.a
-            whileHover={{ scale: 1.05, backgroundColor: 'rgba(var(--secondary), 0.8)' }}
+            whileHover={{ 
+              scale: 1.05, 
+              boxShadow: "0 0 25px hsl(var(--primary) / 0.4)",
+              backgroundColor: "transparent"
+            }}
             whileTap={{ scale: 0.95 }}
             href="#pricing"
-            className="inline-flex items-center justify-center px-10 py-4 rounded-md font-heading text-xl tracking-wider border border-border text-foreground transition-colors backdrop-blur-sm"
+            className="inline-flex items-center justify-center px-10 py-4 rounded-md font-heading text-xl tracking-wider border border-primary text-primary transition-all duration-300 backdrop-blur-sm cursor-pointer"
           >
             VIEW PACKAGES
           </motion.a>

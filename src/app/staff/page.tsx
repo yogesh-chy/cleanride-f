@@ -23,18 +23,10 @@ export default function StaffDashboard() {
   const [filter, setFilter] = useState<"all" | WashStatus>("all");
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    if (user && user.role !== "staff" && user.role !== "admin") {
-      router.push("/");
-      return;
-    }
     setBookings(generateDemoBookings());
   }, [isAuthenticated, user, router]);
 
-  const handleLogout = () => { logout(); router.push("/"); };
+  const handleLogout = async () => { await logout(); router.push("/login"); };
 
   const advanceStatus = (bookingId: string) => {
     setBookings((prev) =>
@@ -48,8 +40,6 @@ export default function StaffDashboard() {
       })
     );
   };
-
-  if (!isAuthenticated || !user || (user.role !== "staff" && user.role !== "admin")) return null;
 
   const filtered = filter === "all" ? bookings : bookings.filter((b) => b.status === filter);
   const queuedCount = bookings.filter((b) => b.status === "queued").length;

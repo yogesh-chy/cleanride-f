@@ -32,20 +32,12 @@ export default function CustomerDashboard() {
   const [timeSlots, setTimeSlots] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    if (user && user.role !== "customer" && user.role !== "admin") {
-      router.push("/");
-      return;
-    }
     setBookings(generateDemoBookings());
     setTimeSlots(generateTimeSlots());
     setSelectedDate(new Date().toISOString().split("T")[0]);
   }, [isAuthenticated, user, router]);
 
-  const handleLogout = () => { logout(); router.push("/"); };
+  const handleLogout = async () => { await logout(); router.push("/login"); };
 
   const handleBook = (e: React.FormEvent) => {
     e.preventDefault();

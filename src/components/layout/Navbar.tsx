@@ -75,8 +75,17 @@ const Navbar = () => {
             </Link>
           ) : (
             <>
-              <Link href="/login" className="px-5 py-2 rounded-md font-body text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Login
+              <Link href="/login">
+                <motion.button
+                  whileHover={{ 
+                    scale: 1.05, 
+                    boxShadow: "0 0 20px hsl(var(--primary) / 0.4)"
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 py-2 rounded-md font-body text-sm font-semibold border border-primary text-primary transition-all duration-300 active:scale-95"
+                >
+                  Login
+                </motion.button>
               </Link>
               <Link href="/register">
                 <motion.button 

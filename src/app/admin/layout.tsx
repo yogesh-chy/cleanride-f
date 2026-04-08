@@ -18,21 +18,12 @@ export default function AdminLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-      return;
-    }
-    if (user && user.role !== "admin") {
-      router.push("/");
-      return;
-    }
+    // Auth & role checks are handled by proxy.ts
   }, [isAuthenticated, user, router]);
 
-  if (!isAuthenticated || !user || user.role !== "admin") return null;
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
+  const handleLogout = async () => {
+    await logout();
+    router.push("/login");
   };
 
   return (

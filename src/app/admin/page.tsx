@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import {
-  DollarSign, Users, Package, TrendingUp,
-  Search, MoreVertical, AlertCircle, Download
+  DollarSign, Users, ClipboardList, TrendingUp,
+  Search, MoreVertical, ShieldCheck, Download
 } from "lucide-react";
 import {
   WashBooking, WashStatus, generateDemoBookings, packagePricing,
@@ -16,12 +16,42 @@ import { toast } from "sonner";
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<WashBooking[]>([]);
+  const [staffCount, setStaffCount] = useState(0);
+  const [customerCount, setCustomerCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | WashStatus>("all");
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
   useEffect(() => {
     setBookings(generateDemoBookings());
+    fetchStats();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      const headers = { "Authorization": `Bearer ${token}` };
+
+      // Fetch Staff Count
+      const staffRes = await fetch(`${API_BASE_URL}/users/?role=staff`, { headers });
+      if (staffRes.ok) {
+        const staffData = await staffRes.json();
+        const count = staffData.count !== undefined ? staffData.count : (Array.isArray(staffData) ? staffData.length : 0);
+        setStaffCount(count);
+      }
+
+      // Fetch Customer Count
+      const customerRes = await fetch(`${API_BASE_URL}/users/?role=customer`, { headers });
+      if (customerRes.ok) {
+        const customerData = await customerRes.json();
+        const count = customerData.count !== undefined ? customerData.count : (Array.isArray(customerData) ? customerData.length : 0);
+        setCustomerCount(count);
+      }
+    } catch (err) {
+      console.error("Failed to fetch dashboard stats", err);
+    }
+  };
 
   const filtered = bookings.filter((b) => {
     const matchesSearch = b.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,10 +79,10 @@ export default function AdminDashboard() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Revenue", value: `Rs. ${totalRevenue}`, icon: <DollarSign className="text-green-400" />, sub: "+12% from last wk" },
-          { label: "Total Bookings", value: totalBookings, icon: <Package className="text-primary" />, sub: "+8% from last wk" },
-          { label: "Active Now", value: activeBookings, icon: <AlertCircle className="text-yellow-400" />, sub: "5 currently washing" },
-          { label: "New Customers", value: "24", icon: <Users className="text-blue-400" />, sub: "+4 today" },
+          { label: "Total Revenue", value: `Rs. ${totalRevenue}`, icon: <DollarSign className="text-green-400" />, sub: "Demo Data" },
+          { label: "Total Bookings", value: totalBookings, icon: <ClipboardList className="text-primary" />, sub: "Demo Data" },
+          { label: "Total Staff", value: staffCount, icon: <ShieldCheck className="text-yellow-400" />, sub: "Live Team Count" },
+          { label: "Total Customers", value: customerCount, icon: <Users className="text-blue-400" />, sub: "Registered Users" },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
