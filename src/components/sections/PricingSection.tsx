@@ -179,7 +179,7 @@ const PricingSection = () => {
                 </ul>
 
                 <Link
-                  href="/register"
+                  href="/login"
                 >
                   <motion.button
                     whileHover={{ scale: 1.05 }}

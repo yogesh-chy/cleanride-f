@@ -87,7 +87,7 @@ const Navbar = () => {
                   Login
                 </motion.button>
               </Link>
-              <Link href="/register">
+              <Link href="/login">
                 <motion.button 
                   whileHover={{ scale: 1.02, y: -2 }}
                   whileTap={{ scale: 0.98 }}

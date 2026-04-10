@@ -74,7 +74,7 @@ const HeroSection = () => {
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
           <Link
-            href="/register"
+            href="/login"
           >
             <motion.button
               whileHover={{ scale: 1.05, y: -2 }}
