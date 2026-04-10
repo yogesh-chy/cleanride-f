@@ -16,7 +16,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
+import { exportToCSV } from "@/lib/exportUtils";
+import { Download } from "lucide-react";
 interface Customer {
   id: string;
   name: string;
@@ -28,10 +29,14 @@ interface Customer {
   status: "active" | "inactive" | "vip";
 }
 
-const demoCustomers: Customer[] = []; // Clear demo data
+
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [stats, setStats] = useState({
+    total_customers: 0,
+    active_customers_count: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,6 +45,65 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "vip">("all");
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+  useEffect(() => {
+    fetchCustomers();
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      const response = await fetch(`${API_BASE_URL}/bookings/admin/stats/`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats({
+          total_customers: data.total_customers,
+          active_customers_count: data.active_customers_count
+        });
+      }
+    } catch (err) {
+      console.error("Failed to fetch customer stats", err);
+    }
+  };
+
+  const fetchCustomers = async () => {
+    setIsLoading(true);
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      
+      const response = await fetch(`${API_BASE_URL}/users/?role=customer`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        const results = Array.isArray(responseData) ? responseData : responseData.results || [];
+        
+        const mappedData = results.map((item: any) => ({
+          id: item.id.toString(),
+          name: item.name,
+          email: item.email,
+          phone: item.phone,
+          totalBookings: 0, 
+          totalSpent: 0, 
+          lastVisit: "New User",
+          status: "active"
+        }));
+        setCustomers(mappedData);
+      } else {
+        toast.error("Failed to load customer directory");
+      }
+    } catch (err) {
+      toast.error("Connection error while fetching customers");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const confirmDelete = async () => {
     if (!selectedCustomer) return;
@@ -65,6 +129,7 @@ export default function CustomersPage() {
         toast.success(`Removed customer: ${selectedCustomer.name}`);
         setIsDeleteModalOpen(false);
         fetchCustomers();
+        fetchStats(); // Also refresh stats
       } else {
         toast.error("Failed to remove customer");
       }
@@ -80,47 +145,6 @@ export default function CustomersPage() {
     setIsDeleteModalOpen(true);
   };
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
-    setIsLoading(true);
-    try {
-      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
-      
-      const response = await fetch(`${API_BASE_URL}/users/?role=customer`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const responseData = await response.json();
-        // Handle paginated or non-paginated response
-        const results = Array.isArray(responseData) ? responseData : responseData.results || [];
-        
-        const mappedData = results.map((item: any) => ({
-          id: item.id.toString(),
-          name: item.name,
-          email: item.email,
-          phone: item.phone,
-          totalBookings: 0, 
-          totalSpent: 0, 
-          lastVisit: "New User",
-          status: "active"
-        }));
-        setCustomers(mappedData);
-      } else {
-        toast.error("Failed to load customer directory");
-      }
-    } catch (err) {
-      toast.error("Connection error while fetching customers");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const filtered = customers.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          c.phone.includes(searchTerm) || 
@@ -128,6 +152,27 @@ export default function CustomersPage() {
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleExport = () => {
+    if (filtered.length === 0) {
+      toast.error("No customers to export.");
+      return;
+    }
+    exportToCSV(
+      filtered,
+      [
+        { key: "id", label: "Customer ID" },
+        { key: "name", label: "Full Name" },
+        { key: "email", label: "Email Address" },
+        { key: "phone", label: "Phone Number" },
+        { key: "totalBookings", label: "Total Bookings" },
+        { key: "totalSpent", label: "Total Spent (Rs)" },
+        { key: "status", label: "Account Status" },
+      ],
+      `cleanride-customers-${new Date().toISOString().split('T')[0]}.csv`
+    );
+    toast.success("Customer list exported successfully!");
+  };
 
   const statusStyles = {
     active: "bg-green-500/20 text-green-400 border-green-500/30",
@@ -142,13 +187,16 @@ export default function CustomersPage() {
           <h1 className="font-heading text-3xl md:text-4xl text-foreground">Customer Base</h1>
           <p className="font-body text-sm text-muted-foreground mt-1">Directory of all registered customers and their loyalty status</p>
         </div>
+        <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 rounded-md font-heading text-sm tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity uppercase shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+          <Download size={18} /> Export List
+        </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {[
-          { label: "Total Customers", value: customers.length.toString(), sub: "Registered users", icon: <Users size={18} className="text-primary" /> },
-          { label: "Active Users", value: customers.filter(c => c.status === "active").length.toString(), sub: "Recent activity", icon: <UserCheck size={18} className="text-green-400" /> },
+          { label: "Total Customers", value: stats.total_customers.toString(), sub: "Registered users", icon: <Users size={18} className="text-primary" /> },
+          { label: "Active Users", value: stats.active_customers_count.toString(), sub: "Recent activity", icon: <UserCheck size={18} className="text-green-400" /> },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}

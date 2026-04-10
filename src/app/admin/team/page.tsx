@@ -42,6 +42,12 @@ const initialStaff: StaffMember[] = [
 
 export default function StaffPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
+  const [teamStats, setTeamStats] = useState({
+    total_staff: 0,
+    on_duty_today: 0,
+    avg_tasks_per_day: 0,
+    team_rating: 4.85
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -62,7 +68,22 @@ export default function StaffPage() {
   // Fetch staff on load
   useEffect(() => {
     fetchStaff();
+    fetchTeamStats();
   }, []);
+
+  const fetchTeamStats = async () => {
+    try {
+      const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
+      const response = await fetch(`${API_BASE_URL}/bookings/admin/team-stats/`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setTeamStats(await response.json());
+      }
+    } catch (err) {
+      console.error("Failed to fetch team stats", err);
+    }
+  };
 
   const fetchStaff = async () => {
     setIsLoading(true);
@@ -78,7 +99,6 @@ export default function StaffPage() {
       
       if (response.ok) {
         const responseData = await response.json();
-        // Handle paginated or non-paginated response
         const results = Array.isArray(responseData) ? responseData : responseData.results || [];
         
         const mappedData = results.map((item: any) => ({
@@ -250,21 +270,7 @@ export default function StaffPage() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role" className="text-xs uppercase tracking-widest text-muted-foreground">Designation</Label>
-                  <select 
-                    id="role"
-                    value={newStaff.role}
-                    onChange={(e) => setNewStaff({...newStaff, role: e.target.value})}
-                    className="w-full h-10 px-3 rounded-md bg-secondary border border-border font-body text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                    required
-                  >
-                    <option>Wash Technician</option>
-                    <option>Senior Detailer</option>
-                    <option>Interior Specialist</option>
-                    <option>Quality Inspector</option>
-                  </select>
-                </div>
+
                 <DialogFooter className="pt-4">
                   <button 
                     type="submit" 
@@ -315,21 +321,21 @@ export default function StaffPage() {
           <div className="p-3 rounded-lg bg-green-500/10 text-green-400"><ShieldCheck size={24} /></div>
           <div>
             <p className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">On-Duty Today</p>
-            <p className="font-heading text-3xl text-foreground">12 / 15</p>
+            <p className="font-heading text-3xl text-foreground">{teamStats.on_duty_today} / {teamStats.total_staff}</p>
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="p-6 rounded-xl bg-card border border-border shadow-card flex items-center gap-4">
           <div className="p-3 rounded-lg bg-primary/10 text-primary"><Award size={24} /></div>
           <div>
             <p className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Team Rating</p>
-            <p className="font-heading text-3xl text-foreground">4.85 ★</p>
+            <p className="font-heading text-3xl text-foreground">{teamStats.team_rating} ★</p>
           </div>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-6 rounded-xl bg-card border border-border shadow-card flex items-center gap-4">
           <div className="p-3 rounded-lg bg-blue-500/10 text-blue-400"><CheckCircle2 size={24} /></div>
           <div>
             <p className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Avg Tasks / Day</p>
-            <p className="font-heading text-3xl text-foreground">24 Washes</p>
+            <p className="font-heading text-3xl text-foreground">{teamStats.avg_tasks_per_day} Washes</p>
           </div>
         </motion.div>
       </div>

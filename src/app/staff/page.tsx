@@ -10,9 +10,11 @@ import {
   Droplets, Wind
 } from "lucide-react";
 import {
-  WashBooking, WashStatus, generateDemoBookings, packagePricing,
+  WashBooking, WashStatus, packagePricing,
   vehicleTypeLabels, statusColors, statusLabels,
 } from "@/lib/wash-data";
+import { bookingService } from "@/lib/booking-service";
+import { toast } from "sonner";
 
 const statusFlow: WashStatus[] = ["queued", "in-progress", "washing", "drying", "completed"];
 
@@ -23,28 +25,54 @@ export default function StaffDashboard() {
   const [filter, setFilter] = useState<"all" | WashStatus>("all");
 
   useEffect(() => {
-    setBookings(generateDemoBookings());
-  }, [isAuthenticated, user, router]);
+    if (isAuthenticated && user) {
+      loadQueue();
+    }
+  }, [isAuthenticated, user]);
+
+  const loadQueue = async () => {
+    const data = await bookingService.fetchQueue();
+    setBookings(data.results);
+  };
 
   const handleLogout = async () => { await logout(); router.push("/login"); };
 
-  const advanceStatus = (bookingId: string) => {
-    setBookings((prev) =>
-      prev.map((b) => {
-        if (b.id !== bookingId) return b;
-        const currentIdx = statusFlow.indexOf(b.status);
-        if (currentIdx < statusFlow.length - 1) {
-          return { ...b, status: statusFlow[currentIdx + 1], assignedStaff: user?.name };
-        }
-        return b;
-      })
-    );
+  const advanceStatus = async (bookingId: string) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) return;
+
+    const currentIdx = statusFlow.indexOf(booking.status);
+    if (currentIdx < statusFlow.length - 1) {
+      const nextStatus = statusFlow[currentIdx + 1];
+      const success = await bookingService.updateStatus(bookingId, nextStatus);
+      if (success) {
+        toast.success(`Updated to ${statusLabels[nextStatus]}`);
+        loadQueue();
+      } else {
+        toast.error("Failed to update status");
+      }
+    }
   };
 
-  const filtered = filter === "all" ? bookings : bookings.filter((b) => b.status === filter);
-  const queuedCount = bookings.filter((b) => b.status === "queued").length;
-  const inProgressCount = bookings.filter((b) => ["in-progress", "washing", "drying"].includes(b.status)).length;
-  const completedCount = bookings.filter((b) => b.status === "completed").length;
+  // Logic to separate "My Active Job" vs "Available Queue"
+  // Note: user.id is string from authContext, assignedStaffId is also string
+  const myActiveJob = bookings.find(b => 
+    b.assignedStaffId === user?.id?.toString() && 
+    b.status !== "completed" && 
+    b.status !== "cancelled"
+  );
+  
+  const availableQueue = bookings.filter(b => 
+    (!b.assignedStaffId || b.assignedStaffId === "null") && 
+    b.status === "queued"
+  );
+
+  const otherActivity = bookings.filter(b => 
+    b.id !== myActiveJob?.id && 
+    !availableQueue.find(aq => aq.id === b.id)
+  );
+
+  const filteredOther = filter === "all" ? otherActivity : otherActivity.filter((b) => b.status === filter);
 
   const getStatusIcon = (status: WashStatus) => {
     switch (status) {
@@ -76,83 +104,111 @@ export default function StaffDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[
-            { label: "In Queue", count: queuedCount, color: "text-yellow-400" },
-            { label: "In Progress", count: inProgressCount, color: "text-primary" },
-            { label: "Completed", count: completedCount, color: "text-green-400" },
-          ].map((s) => (
-            <div key={s.label} className="p-4 rounded-lg bg-card border border-border text-center">
-              <div className={`font-heading text-3xl ${s.color}`}>{s.count}</div>
-              <div className="font-body text-xs text-muted-foreground">{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-          {[{ key: "all", label: "All" }, ...statusFlow.map((s) => ({ key: s, label: statusLabels[s] }))].map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setFilter(f.key as typeof filter)}
-              className={`px-4 py-2 rounded-md font-body text-xs whitespace-nowrap border transition-all ${
-                filter === f.key ? "bg-primary text-primary-foreground border-primary" : "bg-secondary border-border text-muted-foreground hover:border-primary/50"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Vehicle Queue */}
-        <h2 className="font-heading text-2xl text-foreground mb-4">Vehicle Queue</h2>
-        <div className="space-y-3">
-          {filtered.map((booking) => (
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
+        {/* Active Task Section */}
+        <section className="mb-12">
+          <h2 className="font-heading text-sm uppercase tracking-widest text-primary mb-4">My Active Task</h2>
+          {myActiveJob ? (
             <motion.div
-              key={booking.id}
-              layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="p-4 rounded-lg bg-card border border-border shadow-card flex flex-col sm:flex-row sm:items-center gap-4"
+              layoutId={myActiveJob.id}
+              className="p-6 rounded-xl bg-primary/5 border-2 border-primary/20 shadow-lg relative overflow-hidden"
             >
-              <div className="flex items-center gap-3 flex-1">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${statusColors[booking.status]}`}>
-                  {getStatusIcon(booking.status)}
-                </div>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <Car size={14} className="text-muted-foreground" />
-                    <span className="font-heading text-lg text-foreground">{booking.vehicleNumber}</span>
-                    <span className="font-body text-xs text-muted-foreground">({vehicleTypeLabels[booking.vehicleType]})</span>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="font-body text-xs text-muted-foreground">Booking #{myActiveJob.id}</span>
                   </div>
-                  <div className="font-body text-xs text-muted-foreground">
-                    {booking.customerName} • {booking.timeSlot} • {packagePricing[booking.washPackage].name}
-                  </div>
+                  <h3 className="font-heading text-4xl text-foreground mb-1 tracking-tight">{myActiveJob.vehicleNumber}</h3>
+                  <p className="font-body text-lg text-muted-foreground">{myActiveJob.customerName} • {packagePricing[myActiveJob.washPackage].name}</p>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-3">
-                <span className={`px-3 py-1 rounded-full font-body text-xs ${statusColors[booking.status]}`}>
-                  {statusLabels[booking.status]}
-                </span>
-                {booking.status !== "completed" && booking.status !== "cancelled" && (
-                  <button
-                    onClick={() => advanceStatus(booking.id)}
-                    className="flex items-center gap-1 px-4 py-2 rounded-md bg-primary text-primary-foreground font-body text-xs hover:opacity-90 transition-opacity"
+                <div className="flex flex-col items-end gap-3">
+                   <div className={`px-4 py-1.5 rounded-lg font-heading text-sm font-bold uppercase tracking-widest ${statusColors[myActiveJob.status]}`}>
+                      {statusLabels[myActiveJob.status]}
+                   </div>
+                   <button
+                    onClick={() => advanceStatus(myActiveJob.id)}
+                    className="flex items-center gap-2 px-8 py-4 rounded-lg bg-primary text-primary-foreground font-heading text-sm tracking-widest hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
                   >
-                    Next <ChevronRight size={14} />
+                    NEXT STAGE <ChevronRight size={18} />
                   </button>
-                )}
+                </div>
               </div>
             </motion.div>
-          ))}
-
-          {filtered.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground font-body">No vehicles found</div>
+          ) : (
+            <div className="p-8 rounded-xl bg-card border border-dashed border-border text-center">
+              <p className="font-body text-muted-foreground">You don't have an active wash. Claim one from the queue below!</p>
+            </div>
           )}
-        </div>
+        </section>
+
+        {/* Available Queue */}
+        <section className="mb-12">
+          <h2 className="font-heading text-sm uppercase tracking-widest text-muted-foreground mb-4">Available to Claim</h2>
+          <div className="grid gap-3">
+            {availableQueue.map((booking) => (
+              <motion.div
+                key={booking.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-lg bg-card border border-border hover:border-primary/50 transition-colors flex items-center justify-between group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                    <Car size={20} />
+                  </div>
+                  <div>
+                    <div className="font-heading text-lg text-foreground">{booking.vehicleNumber}</div>
+                    <div className="font-body text-xs text-muted-foreground">{packagePricing[booking.washPackage].name} • {booking.timeSlot}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => advanceStatus(booking.id)}
+                  className="px-4 py-2 rounded-md bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground font-body text-xs font-medium transition-all"
+                >
+                  START WASH
+                </button>
+              </motion.div>
+            ))}
+            {availableQueue.length === 0 && (
+              <p className="text-center py-6 text-muted-foreground font-body text-sm italic">No unassigned vehicles in queue</p>
+            )}
+          </div>
+        </section>
+
+        {/* Activity Logs / All others */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-heading text-xs uppercase tracking-widest text-muted-foreground">Other Activity</h2>
+            <div className="flex gap-2">
+              {["all", "completed"].map((f) => (
+                <button 
+                  key={f} 
+                  onClick={() => setFilter(f as any)}
+                  className={`px-2 py-1 rounded text-[10px] font-heading uppercase tracking-tighter ${filter === f ? 'bg-secondary text-foreground' : 'text-muted-foreground'}`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2 opacity-60 hover:opacity-100 transition-opacity">
+            {filteredOther.map((booking) => (
+              <div key={booking.id} className="p-3 rounded-lg bg-card/50 border border-border flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] ${statusColors[booking.status]}`}>
+                    {getStatusIcon(booking.status)}
+                  </div>
+                  <div className="font-body text-xs">
+                    <span className="font-bold text-foreground">{booking.vehicleNumber}</span>
+                    <span className="text-muted-foreground ml-2">by {booking.assignedStaff || 'Unassigned'}</span>
+                  </div>
+                </div>
+                <span className="font-body text-[10px] text-muted-foreground uppercase">{statusLabels[booking.status]}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   );

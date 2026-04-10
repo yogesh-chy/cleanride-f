@@ -8,48 +8,68 @@ import {
   Search, MoreVertical, ShieldCheck, Download
 } from "lucide-react";
 import {
-  WashBooking, WashStatus, generateDemoBookings, packagePricing,
+  WashBooking, WashStatus, packagePricing,
   vehicleTypeLabels, statusColors, statusLabels,
 } from "@/lib/wash-data";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/exportUtils";
+import { bookingService } from "@/lib/booking-service";
+import {
 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<WashBooking[]>([]);
-  const [staffCount, setStaffCount] = useState(0);
-  const [customerCount, setCustomerCount] = useState(0);
+  const [stats, setStats] = useState({
+    total_revenue: 0,
+    total_bookings: 0,
+    total_customers: 0,
+    total_staff_count: 0
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | WashStatus>("all");
+  const [selectedBooking, setSelectedBooking] = useState<WashBooking | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
   useEffect(() => {
-    setBookings(generateDemoBookings());
-    fetchStats();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    await Promise.all([
+      fetchStats(),
+      fetchRecentBookings()
+    ]);
+    setIsLoading(false);
+  };
 
   const fetchStats = async () => {
     try {
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
-      const headers = { "Authorization": `Bearer ${token}` };
-
-      // Fetch Staff Count
-      const staffRes = await fetch(`${API_BASE_URL}/users/?role=staff`, { headers });
-      if (staffRes.ok) {
-        const staffData = await staffRes.json();
-        const count = staffData.count !== undefined ? staffData.count : (Array.isArray(staffData) ? staffData.length : 0);
-        setStaffCount(count);
-      }
-
-      // Fetch Customer Count
-      const customerRes = await fetch(`${API_BASE_URL}/users/?role=customer`, { headers });
-      if (customerRes.ok) {
-        const customerData = await customerRes.json();
-        const count = customerData.count !== undefined ? customerData.count : (Array.isArray(customerData) ? customerData.length : 0);
-        setCustomerCount(count);
+      const response = await fetch(`${API_BASE_URL}/bookings/admin/stats/`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setStats(await response.json());
       }
     } catch (err) {
       console.error("Failed to fetch dashboard stats", err);
+    }
+  };
+
+  const fetchRecentBookings = async () => {
+    try {
+      const data = await bookingService.fetchAllBookings(1);
+      setBookings(data.results);
+    } catch (err) {
+      console.error("Failed to fetch bookings", err);
     }
   };
 
@@ -60,18 +80,35 @@ export default function AdminDashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalRevenue = bookings.filter((b) => b.status === "completed").reduce((acc, b) => acc + packagePricing[b.washPackage].price, 0);
-  const totalBookings = bookings.length;
-  const activeBookings = bookings.filter((b) => !["completed", "cancelled"].includes(b.status)).length;
+  const handleExport = () => {
+    if (filtered.length === 0) {
+      toast.error("No data to export.");
+      return;
+    }
+    exportToCSV(
+      filtered,
+      [
+        { key: "id", label: "Booking ID" },
+        { key: "customerName", label: "Customer" },
+        { key: "vehicleNumber", label: "Vehicle" },
+        { key: (b) => packagePricing[b.washPackage]?.name || b.washPackage, label: "Package" },
+        { key: "date", label: "Date" },
+        { key: "timeSlot", label: "Time" },
+        { key: (b) => statusLabels[b.status] || b.status, label: "Status" },
+      ],
+      `dashboard-recent-${new Date().toISOString().split('T')[0]}.csv`
+    );
+    toast.success("Report downloaded successfully.");
+  };
 
   return (
     <div className="p-4 md:p-8 space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl md:text-4xl text-foreground">Admin Dash</h1>
-          <p className="font-body text-sm text-muted-foreground mt-1">Overview of business performance and operations</p>
+          <p className="font-body text-sm text-muted-foreground mt-1 text-primary/80 font-medium">Business Performance Overview</p>
         </div>
-        <button onClick={() => toast.success("Exporting report data...")} className="flex items-center gap-2 px-6 py-3 rounded-md font-heading text-sm tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity uppercase">
+        <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 rounded-md font-heading text-sm tracking-wider bg-primary text-primary-foreground hover:opacity-90 transition-opacity uppercase shadow-lg shadow-primary/20">
           <Download size={18} /> Export Report
         </button>
       </div>
@@ -79,24 +116,24 @@ export default function AdminDashboard() {
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Total Revenue", value: `Rs. ${totalRevenue}`, icon: <DollarSign className="text-green-400" />, sub: "Demo Data" },
-          { label: "Total Bookings", value: totalBookings, icon: <ClipboardList className="text-primary" />, sub: "Demo Data" },
-          { label: "Total Staff", value: staffCount, icon: <ShieldCheck className="text-yellow-400" />, sub: "Live Team Count" },
-          { label: "Total Customers", value: customerCount, icon: <Users className="text-blue-400" />, sub: "Registered Users" },
+          { label: "Total Revenue", value: `Rs. ${stats.total_revenue}`, icon: <DollarSign className="text-green-400" />, sub: "Cumulative Earnings" },
+          { label: "Total Bookings", value: stats.total_bookings, icon: <ClipboardList className="text-primary" />, sub: "System Throughput" },
+          { label: "Total Staff", value: stats.total_staff_count, icon: <ShieldCheck className="text-yellow-400" />, sub: "Active Team" },
+          { label: "Total Customers", value: stats.total_customers, icon: <Users className="text-blue-400" />, sub: "Registered Base" },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="p-4 md:p-6 rounded-lg bg-card border border-border shadow-card"
+            className="p-4 md:p-6 rounded-lg bg-card border border-border shadow-card hover:border-primary/30 transition-colors"
           >
             <div className="flex items-center justify-between mb-3 text-muted-foreground">
-              <span className="font-body text-xs font-medium uppercase tracking-wider">{stat.label}</span>
+              <span className="font-body text-[10px] font-bold uppercase tracking-widest">{stat.label}</span>
               {stat.icon}
             </div>
             <div className="font-heading text-2xl md:text-3xl text-foreground mb-1">{stat.value}</div>
-            <div className="font-body text-[10px] text-muted-foreground">{stat.sub}</div>
+            <div className="font-body text-[10px] text-muted-foreground uppercase tracking-tighter">{stat.sub}</div>
           </motion.div>
         ))}
       </div>
@@ -142,7 +179,7 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-body text-sm text-foreground">{b.vehicleNumber}</div>
-                    <div className="font-body text-xs text-muted-foreground uppercase">{vehicleTypeLabels[b.vehicleType]} • {b.vehicleColor}</div>
+                    <div className="font-body text-xs text-muted-foreground uppercase">{vehicleTypeLabels[b.vehicleType]}</div>
                   </td>
                   <td className="px-6 py-4 font-body text-sm text-muted-foreground">
                     {packagePricing[b.washPackage].name}
@@ -155,8 +192,8 @@ export default function AdminDashboard() {
                     <span className={`px-3 py-1 rounded-full font-body text-[10px] ${statusColors[b.status]}`}>{statusLabels[b.status]}</span>
                   </td>
                   <td className="px-6 py-4">
-                    <button onClick={() => toast.info("Listing booking options...")} className="text-muted-foreground hover:text-foreground">
-                      <MoreVertical size={18} />
+                    <button onClick={() => setSelectedBooking(b)} className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
+                      <MoreVertical size={16} />
                     </button>
                   </td>
                 </tr>
@@ -173,6 +210,64 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Details Modal */}
+      <Dialog open={!!selectedBooking} onOpenChange={(open) => !open && setSelectedBooking(null)}>
+        <DialogContent className="sm:max-w-[500px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-xl text-foreground flex items-center justify-between">
+              <span>Booking #{selectedBooking?.id.toUpperCase()}</span>
+              {selectedBooking && (
+                <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusColors[selectedBooking.status]}`}>
+                  {statusLabels[selectedBooking.status]}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-6 pt-4">
+              <div className="bg-secondary/30 p-4 rounded-xl border border-border space-y-3">
+                <h4 className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Customer Info</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Name</p>
+                    <p className="font-body text-sm text-foreground font-medium">{selectedBooking.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Contact</p>
+                    <p className="font-body text-sm text-foreground">{selectedBooking.customerPhone}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-secondary/30 p-4 rounded-xl border border-border space-y-3">
+                <h4 className="font-body text-[10px] uppercase tracking-widest text-muted-foreground">Service Details</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Vehicle</p>
+                    <p className="font-body text-sm text-foreground">{selectedBooking.vehicleNumber}</p>
+                    <p className="font-body text-[10px] text-muted-foreground uppercase">{vehicleTypeLabels[selectedBooking.vehicleType]}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Package</p>
+                    <p className="font-body text-sm text-primary font-medium">{packagePricing[selectedBooking.washPackage].name}</p>
+                    <p className="font-body text-xs text-muted-foreground">Rs. {packagePricing[selectedBooking.washPackage].price}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Schedule</p>
+                    <p className="font-body text-sm text-foreground">{selectedBooking.date}</p>
+                    <p className="font-body text-xs text-muted-foreground">{selectedBooking.timeSlot}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Staff Assigned</p>
+                    <p className="font-body text-sm text-foreground">{selectedBooking.assignedStaff || "Unassigned"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
