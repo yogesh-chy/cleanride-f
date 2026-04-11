@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
@@ -15,24 +15,36 @@ import {
 } from "@/lib/wash-data";
 import { bookingService } from "@/lib/booking-service";
 import { toast } from "sonner";
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 
 const statusFlow: WashStatus[] = ["queued", "in-progress", "washing", "drying", "completed"];
 
 export default function StaffDashboard() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [bookings, setBookings] = useState<WashBooking[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | WashStatus>("all");
+  const [mineOnly, setMineOnly] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
       loadQueue();
+      // Poll for new bookings every 30 seconds
+      const interval = setInterval(loadQueue, 30000);
+      return () => clearInterval(interval);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, mineOnly]); // Reload when mineOnly changes
 
   const loadQueue = async () => {
-    const data = await bookingService.fetchQueue();
-    setBookings(data.results);
+    try {
+      const data = await bookingService.fetchQueue(1, mineOnly);
+      setBookings(data.results);
+    } catch (err) {
+      console.error("Failed to load queue", err);
+    } finally {
+      setDataLoading(false);
+    }
   };
 
   const handleLogout = async () => { await logout(); router.push("/login"); };
@@ -44,33 +56,36 @@ export default function StaffDashboard() {
     const currentIdx = statusFlow.indexOf(booking.status);
     if (currentIdx < statusFlow.length - 1) {
       const nextStatus = statusFlow[currentIdx + 1];
-      const success = await bookingService.updateStatus(bookingId, nextStatus);
-      if (success) {
+      const result = await bookingService.updateStatus(bookingId, nextStatus);
+      if (result.success) {
         toast.success(`Updated to ${statusLabels[nextStatus]}`);
         loadQueue();
       } else {
-        toast.error("Failed to update status");
+        toast.error(result.error || "Failed to update status");
       }
     }
   };
 
-  // Logic to separate "My Active Job" vs "Available Queue"
-  // Note: user.id is string from authContext, assignedStaffId is also string
-  const myActiveJob = bookings.find(b => 
-    b.assignedStaffId === user?.id?.toString() && 
-    b.status !== "completed" && 
-    b.status !== "cancelled"
-  );
-  
-  const availableQueue = bookings.filter(b => 
-    (!b.assignedStaffId || b.assignedStaffId === "null") && 
-    b.status === "queued"
-  );
+  // Logic to separate "My Active Job" vs "Available Queue" (Memoized)
+  const { myActiveJob, availableQueue, otherActivity } = useMemo(() => {
+    const active = bookings.find(b => 
+      b.assignedStaffId === user?.id?.toString() && 
+      b.status !== "completed" && 
+      b.status !== "cancelled"
+    );
+    
+    const available = bookings.filter(b => 
+      (!b.assignedStaffId || b.assignedStaffId === "null" || b.assignedStaffId === null) && 
+      b.status === "queued"
+    );
 
-  const otherActivity = bookings.filter(b => 
-    b.id !== myActiveJob?.id && 
-    !availableQueue.find(aq => aq.id === b.id)
-  );
+    const others = bookings.filter(b => 
+      b.id !== active?.id && 
+      !available.find(aq => aq.id === b.id)
+    );
+
+    return { myActiveJob: active, availableQueue: available, otherActivity: others };
+  }, [bookings, user?.id]);
 
   const filteredOther = filter === "all" ? otherActivity : otherActivity.filter((b) => b.status === filter);
 
@@ -84,6 +99,25 @@ export default function StaffDashboard() {
       default: return <Clock size={16} />;
     }
   };
+
+  // Show skeleton during auth check OR data loading
+  if (isLoading || dataLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="container mx-auto flex items-center justify-between h-16 px-4">
+            <div className="font-heading text-2xl tracking-wider">
+              <span className="text-gradient">CLEAN</span><span className="text-foreground">RIDE</span>
+              <span className="font-body text-xs text-muted-foreground ml-2">Staff Panel</span>
+            </div>
+          </div>
+        </header>
+        <DashboardSkeleton />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user || (user.role !== "staff" && user.role !== "admin")) return null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -144,7 +178,19 @@ export default function StaffDashboard() {
 
         {/* Available Queue */}
         <section className="mb-12">
-          <h2 className="font-heading text-sm uppercase tracking-widest text-muted-foreground mb-4">Available to Claim</h2>
+          <div className="flex items-center justify-between mb-4">
+             <h2 className="font-heading text-sm uppercase tracking-widest text-muted-foreground">Available to Claim</h2>
+             <button 
+                onClick={() => setMineOnly(!mineOnly)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg font-heading text-[10px] tracking-widest uppercase transition-all border ${
+                  mineOnly 
+                    ? "bg-primary/20 border-primary text-primary" 
+                    : "bg-secondary border-border text-muted-foreground hover:border-primary/50"
+                }`}
+             >
+                <User size={12} /> {mineOnly ? "Showing My Assigned" : "Show All Active"}
+             </button>
+          </div>
           <div className="grid gap-3">
             {availableQueue.map((booking) => (
               <motion.div
@@ -163,10 +209,16 @@ export default function StaffDashboard() {
                   </div>
                 </div>
                 <button
-                  onClick={() => advanceStatus(booking.id)}
-                  className="px-4 py-2 rounded-md bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground font-body text-xs font-medium transition-all"
+                  onClick={() => !myActiveJob && advanceStatus(booking.id)}
+                  disabled={!!myActiveJob}
+                  className={`px-4 py-2 rounded-md font-body text-xs font-medium transition-all ${
+                    myActiveJob 
+                      ? "bg-muted text-muted-foreground/30 cursor-not-allowed border border-border" 
+                      : "bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground"
+                  }`}
+                  title={myActiveJob ? "You already have an active job" : "Start this wash"}
                 >
-                  START WASH
+                  {myActiveJob ? "BÜSY" : "START WASH"}
                 </button>
               </motion.div>
             ))}

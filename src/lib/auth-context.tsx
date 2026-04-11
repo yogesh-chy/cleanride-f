@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import Cookies from "js-cookie";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 export type UserRole = "admin" | "staff" | "customer";
 

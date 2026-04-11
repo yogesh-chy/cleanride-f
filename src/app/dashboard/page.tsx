@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
@@ -16,10 +16,13 @@ import {
 import { bookingService } from "@/lib/booking-service";
 import { toast } from "sonner";
 
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
+
 export default function CustomerDashboard() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [bookings, setBookings] = useState<WashBooking[]>([]);
+  const [dataLoading, setDataLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<WashBooking | null>(null);
 
@@ -44,7 +47,7 @@ export default function CustomerDashboard() {
     if (selectedDate) {
       loadSlots();
     }
-  }, [selectedDate]);
+  }, [selectedDate, washPackage]); // Re-load when package changes too!
 
   const loadBookings = async () => {
     try {
@@ -52,18 +55,41 @@ export default function CustomerDashboard() {
       setBookings(data.results || []);
     } catch (err) {
       console.error("Failed to load bookings", err);
+    } finally {
+      setDataLoading(false);
     }
   };
 
-  const totalSpent = bookings
-    .filter(b => b.status === "completed")
-    .reduce((acc, b) => acc + (packagePricing[b.washPackage]?.price || 0), 0);
-  
-  const completedCount = bookings.filter(b => b.status === "completed").length;
-  const ongoingCount = bookings.filter(b => !["completed", "cancelled"].includes(b.status)).length;
+  const { totalSpent, completedCount, ongoingCount } = useMemo(() => {
+    const completed = bookings.filter(b => b.status === "completed");
+    return {
+      totalSpent: completed.reduce((acc, b) => acc + (packagePricing[b.washPackage]?.price || 0), 0),
+      completedCount: completed.length,
+      ongoingCount: bookings.filter(b => !["completed", "cancelled"].includes(b.status)).length
+    };
+  }, [bookings]);
+
+  // CATEGORIZE SLOTS (Memoized to prevent render jank)
+  const categorizedSlots = useMemo(() => {
+    const result: Record<string, any[]> = { Morning: [], Afternoon: [], Evening: [] };
+    if (!timeSlots) return result;
+    
+    timeSlots.forEach(slot => {
+      const timeParts = slot.time.split(':');
+      const hour = parseInt(timeParts[0]);
+      const isPM = slot.time.includes('PM');
+      const hour24 = (isPM && hour !== 12) ? hour + 12 : (!isPM && hour === 12 ? 0 : hour);
+      
+      let period = "Evening";
+      if (hour24 < 12) period = "Morning";
+      else if (hour24 < 16) period = "Afternoon";
+      result[period].push(slot);
+    });
+    return result;
+  }, [timeSlots]);
 
   const loadSlots = async () => {
-    const data = await bookingService.fetchSlots(selectedDate);
+    const data = await bookingService.fetchSlots(selectedDate, washPackage);
     setTimeSlots(data.slots || []);
   };
 
@@ -90,6 +116,22 @@ export default function CustomerDashboard() {
       toast.error(result.error || "Failed to book");
     }
   };
+
+  // Show skeleton during auth check OR data loading
+  if (isLoading || dataLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+          <div className="container mx-auto flex items-center justify-between h-16 px-4">
+            <div className="font-heading text-2xl tracking-wider">
+              <span className="text-gradient">CLEAN</span><span className="text-foreground">RIDE</span>
+            </div>
+          </div>
+        </header>
+        <DashboardSkeleton />
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user || (user.role !== "customer" && user.role !== "admin")) return null;
 
@@ -225,7 +267,7 @@ export default function CustomerDashboard() {
                 </label>
                 <div className="w-full sm:w-1/2 relative group">
                   <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} required
-                    min={new Date().toISOString().split("T")[0]}
+                    min={new Date().toLocaleDateString('en-CA')}
                     className="w-full px-4 py-4 rounded-xl bg-secondary border border-border text-foreground font-heading text-lg focus:outline-none hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary transition-all uppercase tracking-widest dark:[color-scheme:dark]"
                   />
                 </div>
@@ -239,18 +281,8 @@ export default function CustomerDashboard() {
                 {selectedDate ? (
                   <div className="space-y-6">
                     {["Morning", "Afternoon", "Evening"].map((period) => {
-                      const periodSlots = (timeSlots || []).filter(s => {
-                         const timeParts = s.time.split(':');
-                         const hour = parseInt(timeParts[0]);
-                         const isPM = s.time.includes('PM');
-                         const hour24 = (isPM && hour !== 12) ? hour + 12 : (!isPM && hour === 12 ? 0 : hour);
-                         
-                         if (period === "Morning") return hour24 < 12;
-                         if (period === "Afternoon") return hour24 >= 12 && hour24 < 16;
-                         return hour24 >= 16;
-                      });
-
-                      if (periodSlots.length === 0) return null;
+                      const periodSlots = categorizedSlots[period];
+                      if (!periodSlots || periodSlots.length === 0) return null;
 
                       return (
                         <div key={period}>
@@ -260,20 +292,34 @@ export default function CustomerDashboard() {
                              <div className="h-px flex-1 bg-border" />
                           </div>
                           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                            {periodSlots.map((slot) => (
-                              <button key={slot.id} type="button" onClick={() => slot.available && setSelectedSlot(slot.time)}
-                                disabled={!slot.available}
-                                className={`px-2 py-3 rounded-lg font-body text-xs border transition-all ${
-                                  selectedSlot === slot.time
-                                    ? "bg-primary text-primary-foreground border-primary shadow-md"
-                                    : slot.available
-                                    ? "bg-secondary border-border text-foreground hover:border-primary/50"
-                                    : "bg-muted border-border text-muted-foreground/30 cursor-not-allowed"
-                                }`}
-                              >
-                                {slot.time}
-                              </button>
-                            ))}
+                            {periodSlots.map((slot) => {
+                              // isHistoricallyPast is pre-checked or simple
+                              const isDisabled = !slot.available || slot.is_past;
+
+                              return (
+                                <button 
+                                  key={slot.id} 
+                                  type="button" 
+                                  onClick={() => !isDisabled && setSelectedSlot(slot.time)}
+                                  disabled={isDisabled}
+                                  title={slot.occupancy_reason || (slot.is_past ? "This time has passed" : "Available")}
+                                  className={`px-2 py-3 rounded-lg font-body text-xs border transition-all relative group ${
+                                    selectedSlot === slot.time
+                                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                                      : !isDisabled
+                                      ? "bg-secondary border-border text-foreground hover:border-primary/50"
+                                      : "bg-muted border-border text-muted-foreground/30 cursor-not-allowed"
+                                  }`}
+                                >
+                                  {slot.time}
+                                  {!slot.available && slot.occupancyReason && (
+                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-background border border-border rounded text-[8px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 text-foreground">
+                                      {slot.occupancyReason}
+                                    </div>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       );

@@ -85,10 +85,11 @@ const HeroSection = () => {
             </motion.button>
           </Link>
           <motion.a
+            initial={{ backgroundColor: "rgba(0,0,0,0)" }}
             whileHover={{ 
               scale: 1.05, 
               boxShadow: "0 0 25px hsl(var(--primary) / 0.4)",
-              backgroundColor: "transparent"
+              backgroundColor: "rgba(0,0,0,0)"
             }}
             whileTap={{ scale: 0.95 }}
             href="#pricing"

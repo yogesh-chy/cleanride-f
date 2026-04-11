@@ -95,9 +95,12 @@ export const bookingService = {
   },
 
   // Staff/Admin: Get all active queue
-  async fetchQueue(page = 1): Promise<PaginatedBookings> {
+  async fetchQueue(page = 1, mine = false): Promise<PaginatedBookings> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/queue/?page=${page}`, {
+      let url = `${API_BASE_URL}/bookings/queue/?page=${page}`;
+      if (mine) url += `&mine=true`;
+
+      const response = await fetch(url, {
         headers: getAuthHeader(),
       });
       if (!response.ok) throw new Error("Failed to fetch queue");
@@ -108,8 +111,8 @@ export const bookingService = {
       }
 
       return {
-        results: data.results.map(mapBookingToFrontend),
-        count: data.count,
+        results: (data.results || []).map(mapBookingToFrontend),
+        count: data.count || 0,
         next: data.next,
         previous: data.previous
       };
@@ -148,7 +151,7 @@ export const bookingService = {
   },
 
   // Update status (for staff/admin)
-  async updateStatus(id: string, status: WashStatus): Promise<boolean> {
+  async updateStatus(id: string, status: WashStatus): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/bookings/queue/${id}/`, {
         method: "PATCH",
@@ -158,17 +161,27 @@ export const bookingService = {
         },
         body: JSON.stringify({ status }),
       });
-      return response.ok;
+      
+      const data = await response.json();
+      if (!response.ok) {
+        // Return the specific error from DRF (often in 'detail' or a specific field)
+        const errorMsg = data.detail || (data.status ? data.status[0] : "Failed to update status");
+        return { success: false, error: errorMsg };
+      }
+      return { success: true };
     } catch (error) {
       console.error("updateStatus error:", error);
-      return false;
+      return { success: false, error: "Network error" };
     }
   },
 
   // Get available slots
-  async fetchSlots(date: string): Promise<{ date: string; slots: any[] }> {
+  async fetchSlots(date: string, packageType?: string): Promise<{ date: string; slots: any[] }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/slots/?date=${date}`, {
+      let url = `${API_BASE_URL}/bookings/slots/?date=${date}`;
+      if (packageType) url += `&package=${packageType}`;
+      
+      const response = await fetch(url, {
         headers: getAuthHeader(),
       });
       if (!response.ok) return { date, slots: [] };

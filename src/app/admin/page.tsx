@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/exportUtils";
 import { bookingService } from "@/lib/booking-service";
+import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
 
   Dialog,
@@ -22,7 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [bookings, setBookings] = useState<WashBooking[]>([]);
   const [stats, setStats] = useState({
     total_revenue: 0,
@@ -100,6 +101,15 @@ export default function AdminDashboard() {
     );
     toast.success("Report downloaded successfully.");
   };
+
+  // Show skeleton during auth check OR data loading
+  if (authLoading || isLoading) {
+    return (
+      <div className="p-4 md:p-8">
+        <DashboardSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 space-y-8">
