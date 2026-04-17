@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Car, Calendar, Clock, Package, Plus, Eye, LogOut, User,
-  ChevronRight, X
+  ChevronRight, X, CreditCard, ShieldCheck
 } from "lucide-react";
 import {
   WashBooking, WashPackage, VehicleType, packagePricing, 
@@ -107,11 +107,9 @@ export default function CustomerDashboard() {
       timeSlot: selectedSlot,
     });
 
-    if (result.success) {
-      toast.success("Booking confirmed!");
-      loadBookings();
-      setShowBookingForm(false);
-      setVehicleNumber(""); setSelectedSlot("");
+    if (result.success && result.data) {
+      toast.success("Booking submitted! Proceeding to checkout...");
+      router.push(`/dashboard/checkout/${result.data.id}`);
     } else {
       toast.error(result.error || "Failed to book");
     }
@@ -428,9 +426,27 @@ export default function CustomerDashboard() {
                          </div>
                        )}
                     </div>
-                    <button className="font-body text-[10px] text-primary hover:underline uppercase tracking-widest font-bold">
-                      View Details
-                    </button>
+                    <div className="flex items-center gap-2">
+                       {booking.isPaid ? (
+                         <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 text-[9px] font-bold uppercase tracking-widest">
+                           <ShieldCheck size={12} /> Paid
+                         </div>
+                       ) : (
+                         <button 
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             router.push(`/dashboard/checkout/${booking.id}`);
+                           }}
+                           className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/20 border border-primary/30 text-primary text-[9px] font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all cursor-pointer shadow-sm shadow-primary/10"
+                         >
+                           <CreditCard size={12} /> Pay Now
+                         </button>
+                       )}
+                       
+                       <button className="font-body text-[10px] text-primary hover:underline uppercase tracking-widest font-bold ml-2">
+                         View Details
+                       </button>
+                    </div>
                   </div>
                   
                   {/* Decorative background glass shape */}
@@ -450,13 +466,13 @@ export default function CustomerDashboard() {
             <div className="overflow-x-auto">
               {myBookings.length > 0 ? (
                 <table className="w-full text-left">
-                  <thead className="bg-secondary/50 border-b border-border">
-                    <tr>
-                      {["Vehicle", "Package", "Date", "Time", "Status"].map((h) => (
-                        <th key={h} className="px-6 py-4 font-body text-[10px] text-muted-foreground uppercase tracking-widest">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
+                    <thead>
+                      <tr className="bg-secondary/50">
+                        {["Vehicle", "Package", "Date", "Time", "Payment", "Status"].map((h) => (
+                          <th key={h} className="px-6 py-3 text-left font-body text-[10px] text-muted-foreground uppercase tracking-widest">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
                   <tbody className="divide-y divide-border">
                     {myBookings.map((b) => (
                       <tr key={b.id} className="hover:bg-secondary/20 transition-colors cursor-pointer group" onClick={() => setSelectedBooking(b)}>
@@ -469,6 +485,23 @@ export default function CustomerDashboard() {
                         <td className="px-6 py-4 font-body text-sm text-muted-foreground">{packagePricing[b.washPackage].name}</td>
                         <td className="px-6 py-4 font-body text-sm text-muted-foreground">{b.date}</td>
                         <td className="px-6 py-4 font-body text-sm text-muted-foreground">{b.timeSlot}</td>
+                        <td className="px-6 py-4">
+                          {b.isPaid ? (
+                              <span className="text-green-500 font-bold uppercase text-[9px] tracking-widest flex items-center gap-1">
+                                  <ShieldCheck size={12} /> Paid
+                              </span>
+                          ) : (
+                              <button 
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/dashboard/checkout/${b.id}`);
+                                  }}
+                                  className="text-[#5C2D91] hover:text-primary font-bold uppercase text-[9px] tracking-widest underline decoration-dotted"
+                              >
+                                  Pay Now
+                              </button>
+                          )}
+                        </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full font-body text-[10px] uppercase font-bold tracking-widest ${statusColors[b.status]}`}>{statusLabels[b.status]}</span>
                         </td>
@@ -510,8 +543,31 @@ export default function CustomerDashboard() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="text-foreground">{selectedBooking.date}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span className="text-foreground">{selectedBooking.timeSlot}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span className={`px-2 py-1 rounded-full text-xs ${statusColors[selectedBooking.status]}`}>{statusLabels[selectedBooking.status]}</span></div>
+529:                 <div className="flex justify-between border-t border-border/10 pt-2"><span className="text-muted-foreground">Phone</span><span className="text-foreground">{selectedBooking.contactPhone || "Not provided"}</span></div>
+530:                 <div className="flex justify-between"><span className="text-muted-foreground">Address</span><span className="text-foreground text-right max-w-[200px] truncate" title={selectedBooking.address}>{selectedBooking.address || "Not provided"}</span></div>
+                
                 {selectedBooking.assignedStaff && <div className="flex justify-between"><span className="text-muted-foreground">Assigned Staff</span><span className="text-foreground">{selectedBooking.assignedStaff}</span></div>}
                 {selectedBooking.estimatedTime && <div className="flex justify-between"><span className="text-muted-foreground">Est. Time</span><span className="text-foreground">{selectedBooking.estimatedTime} min</span></div>}
+                
+                {/* Payment Status - Last Item */}
+                <div className="flex justify-between items-center py-2 border-t border-border/10 mt-1">
+                    <span className="text-muted-foreground">Payment</span>
+                    {selectedBooking.isPaid ? (
+                        <div className="flex items-center gap-1 text-green-500 font-bold uppercase text-[10px] tracking-widest">
+                            <ShieldCheck size={14} /> Paid
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/dashboard/checkout/${selectedBooking.id}`);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-[#5C2D91] text-white font-bold uppercase text-[10px] tracking-widest hover:opacity-90 transition-all flex items-center gap-2"
+                        >
+                            <CreditCard size={12} /> Pay Now
+                        </button>
+                    )}
+                </div>
               </div>
 
               {/* Status timeline */}

@@ -32,6 +32,9 @@ const mapBookingToFrontend = (data: any): WashBooking => ({
   queuePosition: data.queue_position,
   createdAt: data.created_at,
   estimatedTime: data.estimated_time,
+  contactPhone: data.contact_phone || "",
+  address: data.address || "",
+  isPaid: data.is_paid || false,
 });
 
 export const bookingService = {
@@ -61,6 +64,21 @@ export const bookingService = {
     }
   },
 
+  // Get single booking by ID
+  async fetchBookingById(id: string | number): Promise<WashBooking | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/my/${id}/`, {
+        headers: getAuthHeader(),
+      });
+      if (!response.ok) throw new Error("Failed to fetch booking");
+      const data = await response.json();
+      return mapBookingToFrontend(data);
+    } catch (error) {
+      console.error("fetchBookingById error:", error);
+      return null;
+    }
+  },
+
   // Customer: Create booking
   async createBooking(bookingData: {
     vehicleType: VehicleType;
@@ -68,6 +86,8 @@ export const bookingService = {
     washPackage: WashPackage;
     date: string;
     timeSlot: string;
+    contactPhone?: string;
+    address?: string;
   }): Promise<{ success: boolean; data?: WashBooking; error?: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/bookings/my/`, {
@@ -82,6 +102,8 @@ export const bookingService = {
           wash_package: bookingData.washPackage,
           date: bookingData.date,
           time_slot: bookingData.timeSlot,
+          contact_phone: bookingData.contactPhone,
+          address: bookingData.address,
         }),
       });
 
@@ -147,6 +169,29 @@ export const bookingService = {
     } catch (error) {
       console.error("fetchAllBookings error:", error);
       return { results: [], count: 0 };
+    }
+  },
+
+  // Update booking (e.g., adding contact info at checkout)
+  async updateBooking(id: string | number, data: any): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/my/${id}/`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify(data),
+      });
+      
+      const responseData = await response.json();
+      if (!response.ok) {
+        return { success: false, error: responseData.detail || "Failed to update booking" };
+      }
+      return { success: true };
+    } catch (error) {
+      console.error("updateBooking error:", error);
+      return { success: false, error: "Network error" };
     }
   },
 

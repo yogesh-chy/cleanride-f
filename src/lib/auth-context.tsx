@@ -71,8 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         // Store tokens in cookies
-        Cookies.set("access_token", data.access, { expires: 1, secure: process.env.NODE_ENV === "production", sameSite: "strict" });
-        Cookies.set("refresh_token", data.refresh, { expires: 7, secure: process.env.NODE_ENV === "production", sameSite: "strict" });
+        Cookies.set("access_token", data.access, { expires: 1, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
+        Cookies.set("refresh_token", data.refresh, { expires: 7, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
 
         // Fetch user profile to get role and details
         const profileRes = await fetch(`${API_BASE_URL}/me/`, {

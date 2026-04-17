@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Car, LogOut, User, ChevronRight, Play, CheckCircle, Clock,
-  Droplets, Wind
+  Droplets, Wind, MapPin, Phone
 } from "lucide-react";
 import {
   WashBooking, WashStatus, packagePricing,
@@ -154,6 +154,24 @@ export default function StaffDashboard() {
                   </div>
                   <h3 className="font-heading text-4xl text-foreground mb-1 tracking-tight">{myActiveJob.vehicleNumber}</h3>
                   <p className="font-body text-lg text-muted-foreground">{myActiveJob.customerName} • {packagePricing[myActiveJob.washPackage].name}</p>
+                  <div className="mt-4 p-3 rounded-lg bg-background/50 border border-primary/10 space-y-2">
+                     <div className="flex items-center gap-2 text-xs text-foreground font-medium">
+                        <div className="p-1 rounded bg-primary/10 text-primary"><MapPin size={12} /></div>
+                        {myActiveJob.address || "No address provided"}
+                     </div>
+                     <div className="flex items-center gap-2 text-xs text-foreground font-medium">
+                        <div className="p-1 rounded bg-primary/10 text-primary"><Phone size={12} /></div>
+                        {myActiveJob.contactPhone || "No phone provided"}
+                     </div>
+                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest pt-1">
+                        <span className="text-muted-foreground">Payment:</span>
+                        {myActiveJob.isPaid ? (
+                           <span className="text-green-400">Paid</span>
+                        ) : (
+                           <span className="text-destructive/70">Unpaid</span>
+                        )}
+                     </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-3">
@@ -206,6 +224,11 @@ export default function StaffDashboard() {
                   <div>
                     <div className="font-heading text-lg text-foreground">{booking.vehicleNumber}</div>
                     <div className="font-body text-xs text-muted-foreground">{packagePricing[booking.washPackage].name} • {booking.timeSlot}</div>
+                    <div className="font-body text-[10px] text-muted-foreground/60 mt-1 flex items-center gap-2">
+                       <span>{booking.address?.split(',')[0]}</span>
+                       <span>•</span>
+                       <span className={booking.isPaid ? "text-green-400" : "text-destructive/50"}>{booking.isPaid ? "PAID" : "UNPAID"}</span>
+                    </div>
                   </div>
                 </div>
                 <button

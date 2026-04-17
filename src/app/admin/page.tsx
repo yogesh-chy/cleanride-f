@@ -196,7 +196,13 @@ export default function AdminDashboard() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-body text-sm text-foreground">Rs. {packagePricing[b.washPackage].price}</div>
-                    <div className="font-body text-[10px] text-green-400 font-medium uppercase">Paid</div>
+                    {b.isPaid ? (
+                       <div className="font-body text-[10px] text-green-400 font-medium uppercase flex items-center gap-1">
+                          <ShieldCheck size={10} /> Paid
+                       </div>
+                    ) : (
+                       <div className="font-body text-[10px] text-destructive/70 font-medium uppercase">Unpaid</div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full font-body text-[10px] ${statusColors[b.status]}`}>{statusLabels[b.status]}</span>
@@ -261,7 +267,7 @@ export default function AdminDashboard() {
                   <div>
                     <p className="font-body text-xs text-muted-foreground">Package</p>
                     <p className="font-body text-sm text-primary font-medium">{packagePricing[selectedBooking.washPackage].name}</p>
-                    <p className="font-body text-xs text-muted-foreground">Rs. {packagePricing[selectedBooking.washPackage].price}</p>
+                    <p className="font-body text-xs text-muted-foreground">Rs. {packagePricing[selectedBooking.washPackage].price} ({selectedBooking.isPaid ? 'PAID' : 'UNPAID'})</p>
                   </div>
                   <div>
                     <p className="font-body text-xs text-muted-foreground">Schedule</p>
@@ -271,6 +277,21 @@ export default function AdminDashboard() {
                   <div>
                     <p className="font-body text-xs text-muted-foreground">Staff Assigned</p>
                     <p className="font-body text-sm text-foreground">{selectedBooking.assignedStaff || "Unassigned"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address & Contact Sync */}
+              <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 space-y-3">
+                <h4 className="font-body text-[10px] uppercase tracking-widest text-primary/70">Pickup / Service Info</h4>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Contact Phone (Checkout)</p>
+                    <p className="font-body text-sm text-foreground">{selectedBooking.contactPhone || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-xs text-muted-foreground">Service Address</p>
+                    <p className="font-body text-sm text-foreground leading-relaxed">{selectedBooking.address || "Not provided"}</p>
                   </div>
                 </div>
               </div>
