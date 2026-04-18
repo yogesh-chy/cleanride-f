@@ -26,6 +26,8 @@ export interface WashBooking {
   createdAt: string;
   estimatedTime?: number; // minutes
   isPaid?: boolean;
+  contactPhone?: string;
+  address?: string;
 }
 
 export const packagePricing: Record<WashPackage, { name: string; price: number; duration: number; features: string[] }> = {
