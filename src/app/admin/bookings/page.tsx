@@ -147,8 +147,79 @@ export default function BookingsPage() {
       </div>
 
       {/* Bookings Table */}
+      {/* Bookings View Wrapper */}
       <div className="bg-card border border-border rounded-lg shadow-card overflow-hidden">
-        <div className="overflow-x-auto">
+        
+        {/* Mobile Card List (shown only on mobile) */}
+        <div className="md:hidden divide-y divide-border">
+          {filtered.length > 0 ? (
+            filtered.map((b) => (
+              <div key={b.id} onClick={() => setSelectedBooking(b)} className="p-4 active:bg-secondary/30 transition-colors">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <span className="font-body text-[8px] font-bold text-primary uppercase tracking-widest">#{b.id.toUpperCase()}</span>
+                    <div className="font-body text-sm font-bold text-foreground">{b.customerName}</div>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full font-body text-[8px] uppercase font-bold tracking-widest ${statusColors[b.status]}`}>
+                    {statusLabels[b.status]}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-y-3 mb-4">
+                  <div>
+                    <p className="font-body text-[7px] uppercase text-muted-foreground tracking-widest mb-0.5">Vehicle</p>
+                    <p className="font-body text-[10px] text-foreground font-medium">{b.vehicleNumber}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[7px] uppercase text-muted-foreground tracking-widest mb-0.5">Package</p>
+                    <p className="font-body text-[10px] text-primary/80 font-bold">{packagePricing[b.washPackage].name}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[7px] uppercase text-muted-foreground tracking-widest mb-0.5">Time Slot</p>
+                    <p className="font-body text-[10px] text-foreground">{b.timeSlot}</p>
+                  </div>
+                  <div>
+                    <p className="font-body text-[7px] uppercase text-muted-foreground tracking-widest mb-0.5">Date</p>
+                    <p className="font-body text-[10px] text-foreground">{b.date}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                  <div className="flex items-center gap-4">
+                    {b.status !== "completed" && b.status !== "cancelled" && (
+                      <button 
+                         onClick={(e) => {
+                            e.stopPropagation();
+                            bookingService.updateStatus(b.id, "completed").then(() => { loadAllBookings(currentPage); toast.success("Completed"); });
+                         }}
+                         className="flex items-center gap-1.5 text-green-400 font-bold text-[9px] uppercase tracking-widest"
+                      >
+                         <CheckCircle size={14} /> Done
+                      </button>
+                    )}
+                    {b.status !== "cancelled" && b.status !== "completed" && (
+                      <button 
+                         onClick={(e) => {
+                            e.stopPropagation();
+                            bookingService.updateStatus(b.id, "cancelled").then(() => { loadAllBookings(currentPage); toast.error("Cancelled"); });
+                         }}
+                         className="flex items-center gap-1.5 text-destructive/70 font-bold text-[9px] uppercase tracking-widest"
+                      >
+                         <XCircle size={14} /> Cancel
+                      </button>
+                    )}
+                  </div>
+                  <button className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Details <ChevronRight size={10} className="inline ml-1" /></button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-12 text-center text-muted-foreground font-body text-xs italic">No bookings found</div>
+          )}
+        </div>
+
+        {/* Desktop Table View (hidden on mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-secondary/50">
               <tr>

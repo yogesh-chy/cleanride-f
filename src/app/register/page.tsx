@@ -35,7 +35,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen bg-background overflow-hidden font-body relative">
-      <Link href="/" className="absolute top-6 left-6 md:left-10 z-50 font-heading text-3xl md:text-5xl tracking-wider">
+      <Link href="/" className="absolute top-5 left-5 md:top-10 md:left-10 z-50 font-heading text-3xl md:text-5xl tracking-wider">
         <span className="text-gradient">CLEAN</span>
         <span className="text-foreground">RIDE</span>
       </Link>
@@ -77,7 +77,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Right Panel: Register Form */}
-      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center pt-4 pb-8 px-8 bg-background relative">
+      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center pt-24 pb-12 lg:pt-0 px-8 bg-background relative overflow-y-auto lg:overflow-visible">
         <div className="lg:hidden absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-primary/20 blur-[100px] -z-10" />
 
         <motion.div
@@ -86,9 +86,9 @@ export default function RegisterPage() {
           className="w-full max-w-md"
         >
 
-          <div className="mb-2 text-center lg:text-left">
-            <h1 className="font-heading text-3xl md:text-4xl text-foreground mb-1 uppercase tracking-tight leading-tight">Create Account</h1>
-            <p className="font-body text-muted-foreground text-sm">Start your journey to a cleaner ride today</p>
+          <div className="mb-8 text-center lg:text-left">
+            <h1 className="font-heading text-3xl md:text-4xl text-foreground mb-2 uppercase tracking-tight leading-tight">Create Account</h1>
+            <p className="font-body text-sm text-muted-foreground opacity-70 italic tracking-wide">Start your journey to a cleaner ride today</p>
           </div>
 
           <div className="w-full space-y-4">

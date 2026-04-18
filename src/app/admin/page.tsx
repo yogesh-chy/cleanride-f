@@ -170,7 +170,38 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Card View (shown only on mobile) */}
+        <div className="md:hidden divide-y divide-border">
+          {filtered.length > 0 ? (
+            filtered.map((b) => (
+              <div key={b.id} onClick={() => setSelectedBooking(b)} className="p-4 active:bg-secondary/30 transition-colors">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="font-body text-sm font-bold text-foreground">{b.customerName}</div>
+                  <span className={`px-2 py-0.5 rounded-full font-body text-[8px] uppercase font-bold tracking-widest ${statusColors[b.status]}`}>
+                    {statusLabels[b.status]}
+                  </span>
+                </div>
+                <div className="flex justify-between items-end">
+                  <div className="space-y-1">
+                    <p className="font-body text-[10px] text-muted-foreground uppercase">{b.vehicleNumber} • {vehicleTypeLabels[b.vehicleType]}</p>
+                    <p className="font-body text-[10px] text-primary/70">{packagePricing[b.washPackage].name}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-body text-xs text-foreground font-medium">Rs. {packagePricing[b.washPackage].price}</p>
+                    <p className={`font-body text-[8px] uppercase font-bold ${b.isPaid ? 'text-green-500' : 'text-destructive/50'}`}>
+                      {b.isPaid ? 'Paid' : 'Unpaid'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-8 text-center text-muted-foreground font-body text-xs italic">No entries found</div>
+          )}
+        </div>
+
+        {/* Desktop Table View (hidden on mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-secondary/50">
               <tr>

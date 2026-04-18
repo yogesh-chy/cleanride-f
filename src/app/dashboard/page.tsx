@@ -173,18 +173,18 @@ export default function CustomerDashboard() {
         </div>
 
         {/* Customer Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-12">
           {[
-            { label: "Bookings Scheduled", value: ongoingCount, icon: <Clock size={20} className="text-primary" />, sub: "Active in queue" },
-            { label: "Total Spent", value: `Rs. ${totalSpent}`, icon: <Package size={20} className="text-green-400" />, sub: `${completedCount} Washes done` },
-            { label: "Loyalty Tier", value: completedCount >= 10 ? "GOLD" : completedCount >= 5 ? "SILVER" : "BRONZE", icon: <User size={20} className="text-yellow-500" />, sub: "Member Status" },
+            { label: "Bookings", value: ongoingCount, icon: <Clock size={16} className="text-primary" />, sub: "Active" },
+            { label: "Spent", value: `Rs. ${totalSpent}`, icon: <Package size={16} className="text-green-400" />, sub: `${completedCount} Done` },
+            { label: "Loyalty", value: completedCount >= 10 ? "GOLD" : completedCount >= 5 ? "SILVER" : "BRONZE", icon: <User size={16} className="text-yellow-500" />, sub: "Tier" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="p-4 md:p-6 rounded-lg bg-card/40 backdrop-blur-md border border-border shadow-card hover:border-primary/30 transition-all group"
+              className={`p-3 md:p-6 rounded-lg bg-card/40 backdrop-blur-md border border-border shadow-card hover:border-primary/30 transition-all group ${i === 2 ? 'col-span-2 sm:col-span-1' : ''}`}
             >
               <div className="flex items-center justify-between mb-3 text-muted-foreground">
                 <span className="font-body text-[10px] font-bold uppercase tracking-widest">{stat.label}</span>
@@ -462,7 +462,65 @@ export default function CustomerDashboard() {
           <h2 className="font-heading text-2xl text-foreground mb-4 flex items-center gap-2">
             <Package size={20} className="text-primary" /> Booking History
           </h2>
-          <div className="rounded-lg border border-border bg-card shadow-card overflow-hidden">
+          
+          {/* Mobile Card View (shown only on mobile) */}
+          <div className="md:hidden space-y-4">
+            {myBookings.length > 0 ? (
+              myBookings.map((b) => (
+                <motion.div
+                  key={b.id}
+                  onClick={() => setSelectedBooking(b)}
+                  className="p-4 rounded-xl bg-card border border-border shadow-sm active:scale-[0.98] transition-all"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <div className="font-heading text-lg text-foreground">{b.vehicleNumber}</div>
+                      <div className="font-body text-[10px] text-muted-foreground uppercase tracking-widest">{packagePricing[b.washPackage].name}</div>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full font-body text-[8px] uppercase font-bold tracking-widest ${statusColors[b.status]}`}>
+                      {statusLabels[b.status]}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 py-3 border-y border-white/5 my-3">
+                    <div>
+                      <p className="text-[7px] uppercase font-bold text-muted-foreground/40 mb-0.5 tracking-tighter">Date & Time</p>
+                      <p className="text-[10px] text-foreground font-medium">{b.date} • {b.timeSlot}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[7px] uppercase font-bold text-muted-foreground/40 mb-0.5 tracking-tighter">Payment</p>
+                      {b.isPaid ? (
+                        <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest flex items-center justify-end gap-1">
+                          <ShieldCheck size={10} /> Paid
+                        </p>
+                      ) : (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/checkout/${b.id}`);
+                          }}
+                          className="text-[#5C2D91] font-bold uppercase text-[9px] tracking-widest underline decoration-dotted"
+                        >
+                          Pay Now
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center">
+                     <button className="text-[8px] text-primary font-bold uppercase tracking-[0.2em] opacity-40 hover:opacity-100 transition-opacity">Tap for Details</button>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="p-8 text-center bg-card/20 rounded-xl border border-dashed border-border">
+                <p className="font-body text-xs text-muted-foreground italic">No history found</p>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table View (hidden on mobile) */}
+          <div className="hidden md:block rounded-lg border border-border bg-card shadow-card overflow-hidden">
             <div className="overflow-x-auto">
               {myBookings.length > 0 ? (
                 <table className="w-full text-left">

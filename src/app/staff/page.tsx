@@ -140,56 +140,57 @@ export default function StaffDashboard() {
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         {/* Active Task Section */}
-        <section className="mb-12">
-          <h2 className="font-heading text-sm uppercase tracking-widest text-primary mb-4">My Active Task</h2>
+        <section className="mb-10">
+          <h2 className="font-heading text-[10px] uppercase tracking-[0.3em] text-primary mb-4 flex items-center gap-2">
+            <Clock size={12} /> My Active Task
+          </h2>
           {myActiveJob ? (
             <motion.div
               layoutId={myActiveJob.id}
-              className="p-6 rounded-xl bg-primary/5 border-2 border-primary/20 shadow-lg relative overflow-hidden"
+              className="p-5 md:p-8 rounded-2xl bg-primary/[0.03] border border-primary/20 shadow-xl relative overflow-hidden group"
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-body text-xs text-muted-foreground">Booking #{myActiveJob.id}</span>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div className="space-y-4">
+                  <div>
+                    <span className="font-body text-[8px] font-bold text-primary/40 uppercase tracking-widest">Job #{myActiveJob.id}</span>
+                    <h3 className="font-heading text-4xl md:text-5xl text-foreground mb-1 tracking-tighter italic">{myActiveJob.vehicleNumber}</h3>
+                    <p className="font-body text-sm text-muted-foreground font-medium uppercase tracking-wider">
+                       {myActiveJob.customerName} <span className="mx-2 opacity-20">|</span> <span className="text-primary/70">{packagePricing[myActiveJob.washPackage].name}</span>
+                    </p>
                   </div>
-                  <h3 className="font-heading text-4xl text-foreground mb-1 tracking-tight">{myActiveJob.vehicleNumber}</h3>
-                  <p className="font-body text-lg text-muted-foreground">{myActiveJob.customerName} • {packagePricing[myActiveJob.washPackage].name}</p>
-                  <div className="mt-4 p-3 rounded-lg bg-background/50 border border-primary/10 space-y-2">
-                     <div className="flex items-center gap-2 text-xs text-foreground font-medium">
-                        <div className="p-1 rounded bg-primary/10 text-primary"><MapPin size={12} /></div>
-                        {myActiveJob.address || "No address provided"}
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                     <div className="p-3 rounded-xl bg-background/40 border border-white/5 flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary"><MapPin size={14} /></div>
+                        <span className="text-[11px] text-foreground font-medium truncate">{myActiveJob.address || "No address"}</span>
                      </div>
-                     <div className="flex items-center gap-2 text-xs text-foreground font-medium">
-                        <div className="p-1 rounded bg-primary/10 text-primary"><Phone size={12} /></div>
-                        {myActiveJob.contactPhone || "No phone provided"}
-                     </div>
-                     <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest pt-1">
-                        <span className="text-muted-foreground">Payment:</span>
-                        {myActiveJob.isPaid ? (
-                           <span className="text-green-400">Paid</span>
-                        ) : (
-                           <span className="text-destructive/70">Unpaid</span>
-                        )}
+                     <div className="p-3 rounded-xl bg-background/40 border border-white/5 flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary"><Phone size={14} /></div>
+                        <span className="text-[11px] text-foreground font-medium">{myActiveJob.contactPhone || "No phone"}</span>
                      </div>
                   </div>
                 </div>
 
-                <div className="flex flex-col items-end gap-3">
-                   <div className={`px-4 py-1.5 rounded-lg font-heading text-sm font-bold uppercase tracking-widest ${statusColors[myActiveJob.status]}`}>
+                <div className="flex flex-col items-center md:items-end gap-4 pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
+                   <div className={`px-4 py-1.5 rounded-full font-heading text-[10px] font-bold uppercase tracking-widest ${statusColors[myActiveJob.status]}`}>
                       {statusLabels[myActiveJob.status]}
                    </div>
                    <button
                     onClick={() => advanceStatus(myActiveJob.id)}
-                    className="flex items-center gap-2 px-8 py-4 rounded-lg bg-primary text-primary-foreground font-heading text-sm tracking-widest hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-10 py-5 rounded-full bg-primary text-primary-foreground font-heading text-sm tracking-[0.2em] hover:scale-105 transition-all shadow-xl shadow-primary/20 group/btn"
                   >
-                    NEXT STAGE <ChevronRight size={18} />
+                    NEXT STAGE <ChevronRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
                   </button>
                 </div>
               </div>
+              
+              {/* Background accent */}
+              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
             </motion.div>
           ) : (
-            <div className="p-8 rounded-xl bg-card border border-dashed border-border text-center">
-              <p className="font-body text-muted-foreground">You don't have an active wash. Claim one from the queue below!</p>
+            <div className="py-12 px-6 rounded-2xl bg-secondary/20 border border-dashed border-border text-center group">
+              <Car size={32} className="mx-auto text-muted-foreground/20 mb-3 group-hover:text-primary/20 transition-all" />
+              <p className="font-body text-xs text-muted-foreground uppercase tracking-widest leading-relaxed">No active task. Select an available wash below to begin.</p>
             </div>
           )}
         </section>
