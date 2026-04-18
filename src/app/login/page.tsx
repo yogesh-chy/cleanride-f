@@ -81,7 +81,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Panel: Login Form */}
-      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center pt-24 pb-12 lg:pt-0 px-8 bg-background relative overflow-y-auto lg:overflow-visible">
+      <div className="w-full lg:w-1/2 flex items-center justify-center pt-24 pb-12 lg:pt-0 px-8 bg-background relative overflow-y-auto lg:overflow-visible">
         {/* Subtle background glow for mobile */}
         <div className="lg:hidden absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-primary/20 blur-[100px] -z-10" />
 

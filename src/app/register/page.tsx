@@ -77,12 +77,12 @@ export default function RegisterPage() {
       </div>
 
       {/* Right Panel: Register Form */}
-      <div className="w-full lg:w-1/2 flex items-start lg:items-center justify-center pt-24 pb-12 lg:pt-0 px-8 bg-background relative overflow-y-auto lg:overflow-visible">
+      <div className="w-full lg:w-1/2 flex items-center justify-center pt-24 pb-12 lg:pt-0 px-8 bg-background relative overflow-y-auto lg:overflow-visible">
         <div className="lg:hidden absolute top-[-10%] right-[-10%] w-[300px] h-[300px] bg-primary/20 blur-[100px] -z-10" />
 
         <motion.div
           initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md"
         >
 
