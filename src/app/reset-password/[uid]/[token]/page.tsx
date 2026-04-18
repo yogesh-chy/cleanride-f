@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import heroImage from "@/assets/hero-carwash.jpg";
+import { BASE_URL } from "@/lib/api-config";
 
 interface ResetPasswordProps {
   params: Promise<{ uid: string; token: string }>;
@@ -21,8 +22,6 @@ export default function ResetPasswordPage({ params }: ResetPasswordProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -36,7 +35,7 @@ export default function ResetPasswordPage({ params }: ResetPasswordProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/password-reset-confirm/`, {
+      const response = await fetch(`${BASE_URL}/password-reset-confirm/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 

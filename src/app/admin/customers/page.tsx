@@ -18,6 +18,8 @@ import {
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/exportUtils";
 import { Download } from "lucide-react";
+import { BASE_URL } from "@/lib/api-config";
+
 interface Customer {
   id: string;
   name: string;
@@ -28,8 +30,6 @@ interface Customer {
   lastVisit: string;
   status: "active" | "inactive" | "vip";
 }
-
-
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -44,8 +44,6 @@ export default function CustomersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "vip">("all");
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
   useEffect(() => {
     fetchCustomers();
     fetchStats();
@@ -54,7 +52,7 @@ export default function CustomersPage() {
   const fetchStats = async () => {
     try {
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
-      const response = await fetch(`${API_BASE_URL}/bookings/admin/stats/`, {
+      const response = await fetch(`${BASE_URL}/bookings/admin/stats/`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (response.ok) {

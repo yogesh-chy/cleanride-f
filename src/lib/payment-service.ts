@@ -1,6 +1,5 @@
 import Cookies from "js-cookie";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+import { BASE_URL } from "./api-config";
 
 const getAuthHeader = (): Record<string, string> => {
   const token = Cookies.get("access_token");
@@ -13,7 +12,7 @@ export const paymentService = {
    */
   async initiatePayment(bookingId: string | number, returnUrl: string) {
     try {
-      const response = await fetch(`${API_BASE_URL}/payments/initiate/`, {
+      const response = await fetch(`${BASE_URL}/payments/initiate/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -50,7 +49,7 @@ export const paymentService = {
         headers.Authorization = authHeader.Authorization;
       }
 
-      const response = await fetch(`${API_BASE_URL}/payments/verify/`, {
+      const response = await fetch(`${BASE_URL}/payments/verify/`, {
         method: "POST",
         headers,
         body: JSON.stringify({ pidx }),

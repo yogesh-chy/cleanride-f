@@ -16,12 +16,13 @@ import { exportToCSV } from "@/lib/exportUtils";
 import { bookingService } from "@/lib/booking-service";
 import { DashboardSkeleton } from "@/components/DashboardSkeleton";
 import {
-
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { BASE_URL } from "@/lib/api-config";
+
 export default function AdminDashboard() {
   const { user, isLoading: authLoading } = useAuth();
   const [bookings, setBookings] = useState<WashBooking[]>([]);
@@ -35,8 +36,6 @@ export default function AdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<"all" | WashStatus>("all");
   const [selectedBooking, setSelectedBooking] = useState<WashBooking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
   useEffect(() => {
     fetchData();
@@ -54,7 +53,7 @@ export default function AdminDashboard() {
   const fetchStats = async () => {
     try {
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
-      const response = await fetch(`${API_BASE_URL}/bookings/admin/stats/`, {
+      const response = await fetch(`${BASE_URL}/bookings/admin/stats/`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (response.ok) {

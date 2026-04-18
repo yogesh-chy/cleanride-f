@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import Cookies from "js-cookie";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { BASE_URL } from "./api-config";
 
 export type UserRole = "admin" | "staff" | "customer";
 
@@ -25,8 +26,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const accessToken = Cookies.get("access_token");
       if (accessToken) {
         try {
-          const response = await fetch(`${API_BASE_URL}/me/`, {
+          const response = await fetch(`${BASE_URL}/me/`, {
             headers: {
               "Authorization": `Bearer ${accessToken}`,
             },
@@ -61,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/login/`, {
+      const response = await fetch(`${BASE_URL}/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -75,7 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         Cookies.set("refresh_token", data.refresh, { expires: 7, secure: process.env.NODE_ENV === "production", sameSite: "lax" });
 
         // Fetch user profile to get role and details
-        const profileRes = await fetch(`${API_BASE_URL}/me/`, {
+        const profileRes = await fetch(`${BASE_URL}/me/`, {
           headers: { "Authorization": `Bearer ${data.access}` },
         });
 
@@ -95,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (name: string, email: string, password: string, phone?: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register/`, {
+      const response = await fetch(`${BASE_URL}/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password, phone }),
@@ -127,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     if (refreshToken && accessToken) {
       try {
-        await fetch(`${API_BASE_URL}/logout/`, {
+        await fetch(`${BASE_URL}/logout/`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",

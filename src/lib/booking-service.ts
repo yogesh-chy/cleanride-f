@@ -1,14 +1,13 @@
 import Cookies from "js-cookie";
 import { WashBooking, WashStatus, VehicleType, WashPackage } from "./wash-data";
- 
- export type PaginatedBookings = {
-   results: WashBooking[];
-   count: number;
-   next?: string | null;
-   previous?: string | null;
- };
+import { BASE_URL } from "./api-config";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+export type PaginatedBookings = {
+  results: WashBooking[];
+  count: number;
+  next?: string | null;
+  previous?: string | null;
+};
 
 const getAuthHeader = (): Record<string, string> => {
   const token = Cookies.get("access_token");
@@ -67,7 +66,7 @@ export const bookingService = {
   // Get single booking by ID
   async fetchBookingById(id: string | number): Promise<WashBooking | null> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/my/${id}/`, {
+      const response = await fetch(`${BASE_URL}/bookings/my/${id}/`, {
         headers: getAuthHeader(),
       });
       if (!response.ok) throw new Error("Failed to fetch booking");
@@ -90,7 +89,7 @@ export const bookingService = {
     address?: string;
   }): Promise<{ success: boolean; data?: WashBooking; error?: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/my/`, {
+      const response = await fetch(`${BASE_URL}/bookings/my/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +118,7 @@ export const bookingService = {
   // Staff/Admin: Get all active queue
   async fetchQueue(page = 1, mine = false): Promise<PaginatedBookings> {
     try {
-      let url = `${API_BASE_URL}/bookings/queue/?page=${page}`;
+      let url = `${BASE_URL}/bookings/queue/?page=${page}`;
       if (mine) url += `&mine=true`;
 
       const response = await fetch(url, {
@@ -147,7 +146,7 @@ export const bookingService = {
   // Admin: Get all bookings
   async fetchAllBookings(page = 1, filters?: string): Promise<PaginatedBookings> {
     try {
-      let url = `${API_BASE_URL}/bookings/admin/?page=${page}`;
+      let url = `${BASE_URL}/bookings/admin/?page=${page}`;
       if (filters) url += `&${filters}`;
 
       const response = await fetch(url, {
@@ -175,7 +174,7 @@ export const bookingService = {
   // Update booking (e.g., adding contact info at checkout)
   async updateBooking(id: string | number, data: any): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/my/${id}/`, {
+      const response = await fetch(`${BASE_URL}/bookings/my/${id}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -198,7 +197,7 @@ export const bookingService = {
   // Update status (for staff/admin)
   async updateStatus(id: string, status: WashStatus): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/queue/${id}/`, {
+      const response = await fetch(`${BASE_URL}/bookings/queue/${id}/`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -223,7 +222,7 @@ export const bookingService = {
   // Get available slots
   async fetchSlots(date: string, packageType?: string): Promise<{ date: string; slots: any[] }> {
     try {
-      let url = `${API_BASE_URL}/bookings/slots/?date=${date}`;
+      let url = `${BASE_URL}/bookings/slots/?date=${date}`;
       if (packageType) url += `&package=${packageType}`;
       
       const response = await fetch(url, {
@@ -240,7 +239,7 @@ export const bookingService = {
   // Admin: Get statistics
   async fetchStats(): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/admin/stats/`, {
+      const response = await fetch(`${BASE_URL}/bookings/admin/stats/`, {
         headers: getAuthHeader(),
       });
       if (!response.ok) throw new Error("Failed to fetch statistics");

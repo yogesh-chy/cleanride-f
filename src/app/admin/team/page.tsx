@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { BASE_URL } from "@/lib/api-config";
 
 interface StaffMember {
   id: string | number;
@@ -54,8 +55,6 @@ export default function StaffPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<{id: string | number, name: string} | null>(null);
   
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-
   // Form state
   const [newStaff, setNewStaff] = useState({
     name: "",
@@ -74,7 +73,7 @@ export default function StaffPage() {
   const fetchTeamStats = async () => {
     try {
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
-      const response = await fetch(`${API_BASE_URL}/bookings/admin/team-stats/`, {
+      const response = await fetch(`${BASE_URL}/bookings/admin/team-stats/`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (response.ok) {
@@ -91,7 +90,7 @@ export default function StaffPage() {
       // Get token from cookie for auth
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
       
-      const response = await fetch(`${API_BASE_URL}/users/?role=staff`, {
+      const response = await fetch(`${BASE_URL}/users/?role=staff`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -130,7 +129,7 @@ export default function StaffPage() {
     try {
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
       
-      const response = await fetch(`${API_BASE_URL}/staff/`, {
+      const response = await fetch(`${BASE_URL}/staff/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -169,7 +168,7 @@ export default function StaffPage() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/users/${selectedStaff.id}/`, {
+      const response = await fetch(`${BASE_URL}/users/${selectedStaff.id}/`, {
         method: "DELETE",
         headers: { 
           "Authorization": `Bearer ${token}`,
