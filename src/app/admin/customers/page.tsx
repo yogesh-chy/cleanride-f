@@ -72,7 +72,7 @@ export default function CustomersPage() {
     try {
       const token = document.cookie.split(";").find(c => c.trim().startsWith("access_token="))?.split("=")[1];
       
-      const response = await fetch(`${API_BASE_URL}/users/?role=customer`, {
+      const response = await fetch(`${BASE_URL}/users/?role=customer`, {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -115,7 +115,7 @@ export default function CustomersPage() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/users/${selectedCustomer.id}/`, {
+      const response = await fetch(`${BASE_URL}/users/${selectedCustomer.id}/`, {
         method: "DELETE",
         headers: { 
           "Authorization": `Bearer ${token}`,

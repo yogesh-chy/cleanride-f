@@ -40,7 +40,7 @@ export const bookingService = {
   // Customer: Get my bookings
   async fetchMyBookings(page = 1): Promise<PaginatedBookings> {
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/my/?page=${page}`, {
+      const response = await fetch(`${BASE_URL}/bookings/my/?page=${page}`, {
         headers: getAuthHeader(),
       });
       if (!response.ok) throw new Error("Failed to fetch bookings");
